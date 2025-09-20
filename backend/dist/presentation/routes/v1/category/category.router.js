@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const controller_1 = require("../../../../presentation/controller");
+const multer_uploader_1 = require("../../../../presentation/middleware/multer.uploader");
+const categoryRouter = (0, express_1.Router)();
+categoryRouter.post("/upload-image/:id", multer_uploader_1.uploadCategory, controller_1.uploadCategoryImage);
+categoryRouter.post("/", multer_uploader_1.uploadCategory, controller_1.createCategory);
+categoryRouter.put("/:id", controller_1.updateCategory);
+categoryRouter.patch("/:id", controller_1.listCategory);
+categoryRouter.get("/:id", controller_1.getCategoryById);
+categoryRouter.get("/sub/:id", controller_1.getSubCategory);
+categoryRouter.get("/", controller_1.getCategory);
+exports.default = categoryRouter;

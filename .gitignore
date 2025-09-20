@@ -1,0 +1,4 @@
+k8s/configMap.yaml
+k8s/secret.yaml
+jenkins/jenkins-kubeconfig.yaml
+jenkins-token.txt

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buy-nest-backend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: buy-nest-backend
+  template:
+    metadata:
+      labels:
+        app: buy-nest-backend
+    spec:
+      containers:
+      - name: buy-nest-backend
+        image: ${BACKEND_IMAGE_NAME}:${BACKEND_IMAGE_TAG}
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: buy-nest-config
+        - secretRef:
+            name: buy-nest-secrets
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: buy-nest-backend-service
+spec:
+  selector:
+    app: buy-nest-backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP
