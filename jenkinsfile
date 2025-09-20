@@ -6,8 +6,8 @@ pipeline {
         FRONTEND_IMAGE_NAME = "harisankar252000/buy-nest-frontend"
         VERSION = "v1.0.${env.BUILD_NUMBER}"
         IMAGE_TAG = "${VERSION}"
-        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
-        KUBECONFIG_CREDENTIALS = 'kubeconfig'     
+        DOCKERHUB_CREDENTIALS = 'DockerHubAuth'
+        KUBECONFIG_CREDENTIALS = 'kubeConfig'     
     }
 
     stages {
