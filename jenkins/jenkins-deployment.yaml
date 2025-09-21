@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: jenkins
-          image: jenkins/jenkins:lts
+          image: harisankar252000/jenkins-with-tools:latest
           ports:
             - containerPort: 8080
             - containerPort: 50000
@@ -71,3 +71,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
+
