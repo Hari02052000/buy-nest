@@ -53,8 +53,8 @@ pipeline {
                         export FRONTEND_IMAGE_NAME=${FRONTEND_IMAGE_NAME}
                         export FRONTEND_IMAGE_TAG=${IMAGE_TAG}
 
-                        envsubst < k8s/backend-deployment.yaml > k8s/backend-deployment-processed.yaml
-                        envsubst < k8s/frontend-deployment.yaml > k8s/frontend-deployment-processed.yaml
+                        envsubst < k8s/buy-nest-backend-deployment.yaml > k8s/backend-deployment-processed.yaml
+                        envsubst < k8s/buy-nest-frontend-deployment.yaml > k8s/frontend-deployment-processed.yaml
 
                         kubectl apply -f k8s/backend-deployment-processed.yaml
                         kubectl apply -f k8s/frontend-deployment-processed.yaml

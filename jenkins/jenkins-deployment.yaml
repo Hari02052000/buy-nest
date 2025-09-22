@@ -14,6 +14,9 @@ spec:
       labels:
         app: jenkins
     spec:
+      serviceAccountName: default
+      securityContext: 
+       runAsUser: 0  
       containers:
         - name: jenkins
           image: harisankar252000/jenkins-with-tools:latest
