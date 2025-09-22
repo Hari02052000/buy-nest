@@ -7,11 +7,9 @@ pipeline {
         VERSION = "v1.0.${env.BUILD_NUMBER}"
         IMAGE_TAG = "${VERSION}"
         DOCKERHUB_CREDENTIALS = 'DockerHubAuth'
-        KUBECONFIG_CREDENTIALS = 'kubeConfig'     
     }
 
     stages {
-
         stage('Build & Push Backend Image') {
             steps {
                 dir('backend') {
@@ -43,36 +41,66 @@ pipeline {
                 }
             }
         }
-stage('Deploy to Kubernetes') {
-    steps {
-        withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
-            sh '''
-                echo "🔍 Printing kubeconfig in use:"
-                cat $KUBECONFIG
 
-                echo "📌 Current context:"
-                kubectl config --kubeconfig=$KUBECONFIG current-context
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    echo "🔐 Creating fresh Kubernetes token using in-cluster service account"
 
-                echo "📂 Available contexts:"
-                kubectl config --kubeconfig=$KUBECONFIG get-contexts
+                    def token = sh(
+                        script: 'kubectl create token jenkins-serv -n default',
+                        returnStdout: true
+                    ).trim()
 
-                echo "🚀 Running deployment"
+                    def server = sh(
+                        script: "kubectl config view -o jsonpath='{.clusters[0].cluster.server}'",
+                        returnStdout: true
+                    ).trim()
 
-                export BACKEND_IMAGE_NAME=${BACKEND_IMAGE_NAME}
-                export BACKEND_IMAGE_TAG=${IMAGE_TAG}
-                export FRONTEND_IMAGE_NAME=${FRONTEND_IMAGE_NAME}
-                export FRONTEND_IMAGE_TAG=${IMAGE_TAG}
+                    def caData = sh(
+                        script: "kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'",
+                        returnStdout: true
+                    ).trim()
 
-                envsubst < k8s/buy-nest-backend-deployment.yaml > k8s/backend-deployment-processed.yaml
-                envsubst < k8s/buy-nest-frontend-deployment.yaml > k8s/frontend-deployment-processed.yaml
+                    def kubeconfig = """
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: ${server}
+    certificate-authority-data: ${caData}
+  name: cluster
+contexts:
+- context:
+    cluster: cluster
+    user: jenkins-serv
+  name: jenkins-serv-context
+current-context: jenkins-serv-context
+users:
+- name: jenkins-serv
+  user:
+    token: ${token}
+"""
 
-                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/backend-deployment-processed.yaml
-                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/frontend-deployment-processed.yaml
-            '''
+                    writeFile file: 'kubeconfig-temp', text: kubeconfig
+
+                    sh '''
+                        echo "🚀 Deploying to Kubernetes..."
+
+                        export BACKEND_IMAGE_NAME=${BACKEND_IMAGE_NAME}
+                        export BACKEND_IMAGE_TAG=${IMAGE_TAG}
+                        export FRONTEND_IMAGE_NAME=${FRONTEND_IMAGE_NAME}
+                        export FRONTEND_IMAGE_TAG=${IMAGE_TAG}
+
+                        envsubst < k8s/buy-nest-backend-deployment.yaml > k8s/backend-deployment-processed.yaml
+                        envsubst < k8s/buy-nest-frontend-deployment.yaml > k8s/frontend-deployment-processed.yaml
+
+                        kubectl --kubeconfig=kubeconfig-temp apply -f k8s/backend-deployment-processed.yaml
+                        kubectl --kubeconfig=kubeconfig-temp apply -f k8s/frontend-deployment-processed.yaml
+                    '''
+                }
+            }
         }
-    }
-}
-
     }
 
     post {

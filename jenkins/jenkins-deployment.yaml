@@ -14,7 +14,7 @@ spec:
       labels:
         app: jenkins
     spec:
-      serviceAccountName: default
+      serviceAccountName: jenkins-serv
       securityContext: 
        runAsUser: 0  
       containers:
