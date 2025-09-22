@@ -43,25 +43,36 @@ pipeline {
                 }
             }
         }
+stage('Deploy to Kubernetes') {
+    steps {
+        withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
+            sh '''
+                echo "🔍 Printing kubeconfig in use:"
+                cat $KUBECONFIG
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
-                    sh '''
-                        export BACKEND_IMAGE_NAME=${BACKEND_IMAGE_NAME}
-                        export BACKEND_IMAGE_TAG=${IMAGE_TAG}
-                        export FRONTEND_IMAGE_NAME=${FRONTEND_IMAGE_NAME}
-                        export FRONTEND_IMAGE_TAG=${IMAGE_TAG}
+                echo "📌 Current context:"
+                kubectl config --kubeconfig=$KUBECONFIG current-context
 
-                        envsubst < k8s/buy-nest-backend-deployment.yaml > k8s/backend-deployment-processed.yaml
-                        envsubst < k8s/buy-nest-frontend-deployment.yaml > k8s/frontend-deployment-processed.yaml
+                echo "📂 Available contexts:"
+                kubectl config --kubeconfig=$KUBECONFIG get-contexts
 
-                        kubectl apply -f k8s/backend-deployment-processed.yaml
-                        kubectl apply -f k8s/frontend-deployment-processed.yaml
-                    '''
-                }
-            }
+                echo "🚀 Running deployment"
+
+                export BACKEND_IMAGE_NAME=${BACKEND_IMAGE_NAME}
+                export BACKEND_IMAGE_TAG=${IMAGE_TAG}
+                export FRONTEND_IMAGE_NAME=${FRONTEND_IMAGE_NAME}
+                export FRONTEND_IMAGE_TAG=${IMAGE_TAG}
+
+                envsubst < k8s/buy-nest-backend-deployment.yaml > k8s/backend-deployment-processed.yaml
+                envsubst < k8s/buy-nest-frontend-deployment.yaml > k8s/frontend-deployment-processed.yaml
+
+                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/backend-deployment-processed.yaml
+                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/frontend-deployment-processed.yaml
+            '''
         }
+    }
+}
+
     }
 
     post {
