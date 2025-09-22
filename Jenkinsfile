@@ -7,6 +7,7 @@ pipeline {
         VERSION = "v1.0.${env.BUILD_NUMBER}"
         IMAGE_TAG = "${VERSION}"
         DOCKERHUB_CREDENTIALS = 'DockerHubAuth'
+        DEPLOY_NAMESPACE = "default"
     }
 
     stages {
@@ -48,7 +49,7 @@ pipeline {
                     echo "🔐 Creating fresh Kubernetes token using in-cluster service account"
 
                     def token = sh(
-                        script: 'kubectl create token jenkins-serv -n default',
+                        script: 'kubectl create token jenkins-serv -n jenkins',
                         returnStdout: true
                     ).trim()
 
@@ -95,8 +96,8 @@ users:
                         envsubst < k8s/buy-nest-backend-deployment.yaml > k8s/backend-deployment-processed.yaml
                         envsubst < k8s/buy-nest-frontend-deployment.yaml > k8s/frontend-deployment-processed.yaml
 
-                        kubectl --kubeconfig=kubeconfig-temp apply -f k8s/backend-deployment-processed.yaml
-                        kubectl --kubeconfig=kubeconfig-temp apply -f k8s/frontend-deployment-processed.yaml
+                        kubectl --kubeconfig=kubeconfig-temp apply -n ${DEPLOY_NAMESPACE} -f k8s/backend-deployment-processed.yaml
+                        kubectl --kubeconfig=kubeconfig-temp apply -n ${DEPLOY_NAMESPACE} -f k8s/frontend-deployment-processed.yaml
                     '''
                 }
             }
