@@ -6,6 +6,7 @@ import cors from "cors";
 import router from "@/presentation/routes";
 import { handleError } from "@/presentation/middleware/error.middleware";
 import { env } from "@/infrastructure/config/environment";
+import { setupSwagger } from "@/presentation/swager";
 
 export const createServer = () => {
   const app = express();
@@ -21,5 +22,6 @@ export const createServer = () => {
   app.get('/api/health',(req,res,next)=>res.status(200).send("okay"))
   app.use("/api", router);
   app.use(handleError);
+  setupSwagger(app)
   return app;
 };

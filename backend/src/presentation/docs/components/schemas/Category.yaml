@@ -1,0 +1,22 @@
+type: object
+properties:
+  id:
+    type: string
+    example: "64fbf2d89e7c95a72f0a98b5"
+  name:
+    type: string
+    example: "Category Name"
+  image:
+    type: string
+    example: "https://example.com/image2.jpg"
+  createdAt:
+    type: string
+    format: date-time
+  updatedAt:
+    type: string
+    format: date-time
+
+required:
+  - id
+  - name
+  - image

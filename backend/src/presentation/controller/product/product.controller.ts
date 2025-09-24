@@ -5,7 +5,6 @@ import { productUtills } from "@/infrastructure/utils/product.utils";
 import { tokenUtils } from "@/infrastructure/utils/token.utils";
 import { ResponseUtils } from "@/infrastructure/utils/response.utils";
 import { Request, Response, NextFunction } from "express";
-import { number } from "joi";
 
 const productRepo = new productRepository();
 const productServ = new productService(productRepo, productUtills, tokenUtils, cloudUtills);

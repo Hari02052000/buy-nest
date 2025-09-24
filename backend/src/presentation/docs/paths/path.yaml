@@ -1,0 +1,392 @@
+# user
+/api/v1/user:
+  get:
+    summary: Get user profile
+    tags:
+      - User
+    parameters:
+      - in: cookie
+        name: access_token
+        required: true
+        schema:
+          type: string
+        description: JWT token for user authentication
+    responses:
+      200:
+        description: User profile retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/User.yaml'
+
+/api/v1/user/logout:
+  get:
+    summary: Logout user
+    tags:
+      - User
+    parameters:
+      - in: cookie
+        name: access_token
+        required: true
+        schema:
+          type: string
+        description: JWT token for user authentication
+    responses:
+      200:
+        description: User logged out successfully
+
+#auth
+/api/v1/auth/login:
+  post:
+    summary: User login
+    tags:
+      - Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+              password:
+                type: string
+            required:
+              - email
+              - password
+    responses:
+      200:
+        description: User logged in successfully
+        headers:
+          Set-Cookie:
+            description: JWT token set in cookie
+            schema:
+              type: string
+              example: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/; Secure
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/User.yaml'
+
+/api/v1/auth/register:
+  post:
+    summary: User registration
+    tags:
+      - Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              password:
+                type: string
+              conformPassword:
+                type: string
+            required:
+              - name
+              - email
+              - password
+              - conformPassword
+    responses:
+      201:
+        description: User registered successfully
+        headers:
+          Set-Cookie:
+            description: JWT token set in cookie
+            schema:
+              type: string
+              example: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/; Secure
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/User.yaml'
+
+/api/v1/auth/google-login:
+  get:
+    summary: Start Google OAuth login
+    tags:
+      - Auth
+    responses:
+      302:
+        description: Redirect to Google OAuth
+
+/api/v1/auth/refresh-token:
+  post:
+    summary: Refresh user token
+    tags:
+      - Auth
+    parameters:
+      - in: cookie
+        name: refresh_token
+        required: true
+        schema:
+          type: string
+        description: JWT token for user authentication
+    responses:
+      200:
+        description: Token refreshed successfully
+        headers:
+          Set-Cookie:
+            description: JWT token set in cookie
+            schema:
+              type: string
+              example: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/; Secure
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/User.yaml'
+
+/api/v1/auth/admin/login:
+  post:
+    summary: Admin login
+    tags:
+      - Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+              password:
+                type: string
+            required:
+              - email
+              - password
+    responses:
+      200:
+        description: Admin logged in successfully
+
+/api/v1/auth/admin/refresh-token:
+  post:
+    summary: Refresh admin token
+    tags:
+      - Auth
+    parameters:
+      - in: cookie
+        name: refresh_token_admin
+        required: true
+        schema:
+          type: string
+        description: JWT token for user authentication
+    responses:
+      200:
+        description: Admin token refreshed successfully
+
+
+#product
+/api/v1/product:
+  get:
+    summary: Get products
+    tags:
+      - Product
+    parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name, brand, or model to search
+        required: false
+
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Category ID
+        required: false
+
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Page limit
+        required: false
+
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+        required: false
+
+    responses:
+      200:
+        description: A list of products
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/Product.yaml'
+  post:
+    summary: Create a new product
+    tags:
+      - Product
+    parameters:
+      - in: cookie
+        name: access_token_admin
+        schema:
+          type: string
+        required: true
+        description: Admin JWT token for authentication
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              price:
+                type: number
+              category:
+                type: string
+              brand:
+                type: string
+              model:
+                type: string
+              stock:
+                type: integer
+              images:
+                type: array
+                items:
+                  type: string
+                  format: binary
+    responses:
+      201:
+        description: Product created
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/Product.yaml'
+
+/api/v1/product/{id}:
+  get:
+    summary: Get product by ID
+    tags:
+      - Product
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    responses:
+      200:
+        description: Single product
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/Product.yaml'
+
+  put:
+    summary: Edit a product by ID
+    tags:
+      - Product
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: access_token_admin
+        schema:
+          type: string
+        required: true
+        description: Admin JWT token for authentication
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              price:
+                type: number
+              category:
+                type: string
+              brand:
+                type: string
+              model:
+                type: string
+              stock:
+                type: integer
+    responses:
+      200:
+        description: Product updated
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/Product.yaml'
+
+/api/v1/product/upload-image/{id}:
+  put:
+    summary: Upload images for a product
+    tags:
+      - Product
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: access_token_admin
+        schema:
+          type: string
+        required: true
+        description: Admin JWT token for authentication
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              images:
+                type: array
+                items:
+                  type: string
+                  format: binary
+    responses:
+      200:
+        description: Images uploaded successfully
+
+/api/v1/product/delete-image/{id}:
+  delete:
+    summary: Delete a product image
+    tags:
+      - Product
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: Image ID to delete
+      - in: cookie
+        name: access_token_admin
+        schema:
+          type: string
+        required: true
+        description: Admin JWT token for authentication
+    responses:
+      200:
+        description: Image deleted successfully
