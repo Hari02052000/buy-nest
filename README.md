@@ -1,163 +1,58 @@
-# Buy Nest  - E-commerce Application
+# 🛒 Buy Nest — Full Stack E-Commerce Platform
 
-## Overview
-
-Buy Nest is a comprehensive e-commerce application backend built with Node.js, Express, TypeScript, and MongoDB. It follows Clean Architecture principles with clear separation of concerns across Domain, Application, Infrastructure, and Presentation layers.
-Frontend built with React with saparate admin dashboard and user section with lazy loading admin state fully managed with context api and user side with redux toolkit
-
-# Backend
-
-## Clean Architecture
-
-The backend architecture:
-
-- **Domain Layer**: Contains business entities, interfaces, and types
-- **Application Layer**: Contains business logic and services
-- **Infrastructure Layer**: Contains external concerns (database, utilities, configurations)
-- **Presentation Layer**: Contains controllers, routes, and middleware
-
-## Core Features
-
-- User Authentication (Regular & Google OAuth)
-- Admin Management
-- Product Management
-- Category Management
-- Shopping Cart
-- Wishlist
-- Image Upload (Cloudinary)
-- JWT Token Management
----
-## API Endpoints Structure
-
-### Authentication Routes (`/api/v1/auth`)
-
-- `POST /login` - User login
-- `POST /register` - User registration
-- `POST /refresh` - Token refresh
-- `POST /admin/login` - Admin login
-- `POST /admin/refresh` - Admin token refresh
-- `GET /google` - Google OAuth login
-- `GET /google/callback` - Google OAuth callback
-
-### Product Routes (`/api/v1/product`)
-
-- `GET /` - Get all products (paginated)
-- `GET /:id` - Get single product
-- `POST /` - Create product (Admin)
-- `PUT /:id` - Update product (Admin)
-- `POST /:id/images` - Upload product images (Admin)
-- `DELETE /:id/images` - Delete product image (Admin)
-
-### Category Routes (`/api/v1/category`)
-
-- `GET /` - Get all categories (paginated)
-- `GET /:id` - Get single category
-- `GET /:id/subcategories` - Get subcategories
-- `POST /` - Create category (Admin)
-- `PUT /:id` - Update category (Admin)
-- `POST /:id/image` - Upload category image (Admin)
-- `PUT /:id/list` - Change listing status (Admin)
-
-### Cart Routes (`/api/v1/cart`)
-
-- `GET /` - Get user cart
-- `POST /add` - Add item to cart
-- `PUT /update` - Update cart item
-- `DELETE /remove/:productId` - Remove item from cart
-- `DELETE /clear` - Clear entire cart
-
-### Wishlist Routes (`/api/v1/wishlist`)
-
-- `GET /` - Get user wishlist
-- `POST /add` - Add item to wishlist
-- `DELETE /remove/:productId` - Remove item from wishlist
-- `DELETE /clear` - Clear entire wishlist
+**Buy Nest** is a modern, scalable full-stack e-commerce platform built with **TypeScript**, following **Clean Architecture** principles.  
+It features a robust backend with layered separation of concerns, a performant React frontend, secure authentication, cloud integrations, and fully automated CI/CD deployment with Docker and Kubernetes.
 
 ---
 
-## Security Features
+## 🚀 Tech Stack
 
-### Authentication & Authorization
+### 🧩 Backend
+- **Node.js + Express.js** — RESTful API framework  
+- **TypeScript** — static typing for maintainability  
+- **MongoDB** — NoSQL database  
+- **JWT Authentication** — secure token-based sessions  
+- **Clean Architecture** — layered design for scalability and testability  
+- **Dependency Injection** — for decoupled module communication  
+- **Cloudinary** — media management and image uploads  
+- **Google OAuth 2.0** — third-party authentication  
+- **Stripe** — integrated payment gateways  
+- **Jest** — for unit and integration testing  
 
-- JWT-based authentication with access/refresh token pattern
-- HTTP-only cookies for token storage
-- Admin-specific token validation
-- Google OAuth integration
-- Password hashing with bcrypt and salt
+### 💻 Frontend
+- **React.js (TypeScript)** — responsive user interface  
+- **Material UI (MUI)** — modern UI components  
+- **React Router** — SPA navigation  
+- **Axios** — API communication  
+- **Lazy Loading** — performance optimization  
 
-### Data Validation
-
-- Joi schema validation for all inputs
-- File upload validation
-- Unique constraint validation
-- Authorization checks for admin operations
-
----
-
-## Environment Configuration
-
-The application uses environment variables for configuration:
-
-- `PORT` - Server port (default: 3000)
-- `APP_SECRET` - JWT signing secret
-- `DB_URL` - Database connection string
-- `cloudinary_cloud_name` - cloudinary credantials for image upload
-- `cloudinary_api_key` - cloudinary credantials for image upload
-- `cloudinary_api_secret` - cloudinary credantials for image upload
-- `google_client_id` - google credantials for google login
-- `google_client_secret` - google credantials for google login
-- `google_callback_url` - google credantials for google login
-- `google_callback_url` - google credantials for google login
-- `STRIPE_PUBLISHABLE_KEY` - stripe credantials for online payment
-- `STRIPE_SECRET_KEY` - stripe credantials for online payment
-- `frontend_url` -  frontend url for communication
----
-
-## Development Scripts
-
-- `npm run dev` - Start development server with hot reload
-- `npm test` - Run test suite
-- `npm run format` - Format code with Prettier
+### ⚙️ DevOps & Infrastructure
+- **Docker (Multi-stage builds)** — containerized frontend and backend  
+- **Kubernetes (YAML manifests)** — scalable deployments  
+- **Jenkins (CI/CD)** — automated testing, build, and deployment pipeline  
 
 ---
 
-## Error Handling
 
-The application implements comprehensive error handling:
+## ⚙️ Configuration
 
-### Custom Error Types
+Before running the project, create a `.env` file in the backend root and add the following environment variables:
 
-- **ValidationError**: Input validation failures
-- **AuthorizeError**: Authentication/authorization failures
-- **NotFoundError**: Resource not found errors
+```bash
+APP_SECRET=your_app_secret
+PORT=5000
+DB_URL=mongodb_url
+# Cloudinary (for image uploads)
+cloudinary_cloud_name=your_cloud_name
+cloudinary_api_key=your_api_key
+cloudinary_api_secret=your_api_secret
 
-### Error Middleware
+# Google OAuth (for login)
+google_client_id=your_client_id
+google_client_secret=your_client_secret
+google_callback_url=http://localhost:5000/auth/google/callback
 
-- Centralized error processing
-- Appropriate HTTP status codes
-- Sanitized error messages
-- Development vs production error details
+# Stripe / Payment Gateway
+STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
 
----
-
-## File Upload System
-
-### Image Upload Features
-
-- Cloudinary integration for cloud storage
-- Multiple file upload support
-- Image optimization and transformation
-- Secure file validation
-- Automatic cleanup on deletion
-
-### Supported Operations
-
-- Product image galleries
-- Category thumbnails
-- User profile pictures
-- Bulk image operations
----
-# Frontend
-
-
-This README provides a comprehensive overview of all functions and their purposes within the Buy Nest Backend application. Each function is documented with its purpose, parameters, validation logic, and return values to help developers understand and maintain the codebase effectively.

@@ -6,7 +6,7 @@ import adminRouter from "./admin/admin.router";
 import cartRouter from "./cart/cart.router";
 import wishlistRouter from "./wishlist/wishlist.router";
 import orderRouter from "./order/order.router";
-import paymentRouter from "./payment/payment.router";
+import couponRouter from "./coupon/coupon.router";
 import userRouter from "./user/user.router";
 import addressRouter from "./address/address.router";
 
@@ -19,7 +19,7 @@ v1Router.use("/admin", adminRouter);
 v1Router.use("/cart", cartRouter);
 v1Router.use("/wishlist", wishlistRouter);
 v1Router.use("/order", orderRouter);
-v1Router.use("/payments", paymentRouter);
+v1Router.use("/coupon", couponRouter);
 v1Router.use("/user", userRouter);
 v1Router.use("/address", addressRouter);
 export default v1Router;

@@ -7,16 +7,17 @@ const AdminApp = lazy(() => import("./admin/AdminApp"));
 const UserApp = lazy(() => import("./user/UserApp"));
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Suspense fallback={<div>Loading...</div>}>
-          <Routes>
-            <Route path="/admin/*" element={<AdminApp />} />
-            <Route path="/*" element={<UserApp />} />
-          </Routes>
-        </Suspense>
-      </AuthProvider>
-    </BrowserRouter>
+    // <BrowserRouter>
+    //   <AuthProvider>
+    //     <Suspense fallback={<div>Loading...</div>}>
+    //       <Routes>
+    //         <Route path="/admin/*" element={<AdminApp />} />
+    //         <Route path="/*" element={<UserApp />} />
+    //       </Routes>
+    //     </Suspense>
+    //   </AuthProvider>
+    // </BrowserRouter>
+    <h1>the ui works in progress</h1>
   );
 }
 

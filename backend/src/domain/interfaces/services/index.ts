@@ -5,3 +5,4 @@ export * from "./cart.service.interface";
 export * from "./wishlist.service.interface";
 export * from "./address.service.interface";
 export * from "./order.service.interface";
+export * from "./coupon.service.interface";

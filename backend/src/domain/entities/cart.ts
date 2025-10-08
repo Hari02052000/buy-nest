@@ -1,4 +1,4 @@
-import { Coupon } from "./coupon";
+import { couponProperties } from "./coupon";
 import { productProperties } from "./product";
 
 export class Cart {
@@ -10,7 +10,7 @@ export class Cart {
   createdAt: string;
   updatedAt: string;
   private _modifiedFields = {} as modifiedFields;
-  appliedCoupon?: Coupon;
+  appliedCoupon: string | couponProperties | null;
   discountAmount: number;
 
   constructor(
@@ -28,6 +28,7 @@ export class Cart {
     this.createdAt = new Date().toISOString();
     this.updatedAt = new Date().toISOString();
     this.discountAmount = 0;
+    this.appliedCoupon = null
   }
   setItem(items: CartItem[]) {
     this.items = items;
@@ -41,74 +42,18 @@ export class Cart {
     this.modifiedFields.totalAmount = true;
     this.modifiedFields.updatedAt = true;
   }
-
-  // addItem(productId: string, quantity: number, price: number) {
-  //   const existingItem = this.items.find((item) => typeof item.product === 'string' ? item.product == productId : item.product.id == productId);
-
-  //   if (existingItem) {
-  //     existingItem.quantity += quantity;
-  //     existingItem.totalPrice = existingItem.quantity * existingItem.price;
-  //   } else {
-  //     const newItem: CartItem = {
-  //       product : productId,
-  //       quantity,
-  //       price,
-  //       totalPrice: price * quantity,
-  //     };
-  //     this.items.push(newItem);
-  //   }
-
-  //   this.updateTotals();
-  //   this.updatedAt = new Date().toISOString();
-  //   this._modifiedFields.items = true;
-  //   this._modifiedFields.totalAmount = true;
-  //   this._modifiedFields.itemCount = true;
-  //   this._modifiedFields.updatedAt = true;
-  // }
-
-  // updateItemQuantity(productId: string, quantity: number) {
-  //   const item = this.items.find((item) => typeof item.product === 'string' ? item.product == productId : item.product.id == productId);
-  //   if (item) {
-  //     if (quantity <= 0) {
-  //       this.removeItem(productId);
-  //     } else {
-  //       item.quantity = quantity;
-  //       item.totalPrice = item.quantity * item.price;
-  //       this.updateTotals();
-  //       this.updatedAt = new Date().toISOString();
-  //       this._modifiedFields.items = true;
-  //       this._modifiedFields.totalAmount = true;
-  //       this._modifiedFields.itemCount = true;
-  //       this._modifiedFields.updatedAt = true;
-  //     }
-  //   }
-  // }
-
-  // removeItem(productId: string) {
-  //   this.items = this.items.filter((item) => typeof item.product === 'string' ? item.product !== productId : item.product.id !== productId);
-  //   this.updateTotals();
-  //   this.updatedAt = new Date().toISOString();
-  //   this._modifiedFields.items = true;
-  //   this._modifiedFields.totalAmount = true;
-  //   this._modifiedFields.itemCount = true;
-  //   this._modifiedFields.updatedAt = true;
-  // }
-
-  // clearCart() {
-  //   this.items = [];
-  //   this.updateTotals();
-  //   this.updatedAt = new Date().toISOString();
-  //   this._modifiedFields.items = true;
-  //   this._modifiedFields.totalAmount = true;
-  //   this._modifiedFields.itemCount = true;
-  //   this._modifiedFields.updatedAt = true;
-  // }
-
-  // private updateTotals() {
-  //   const subtotal = this.items.reduce((sum, item) => sum + item.totalPrice, 0);
-  //   this.totalAmount = subtotal - this.discountAmount;
-  //   this.itemCount = this.items.reduce((sum, item) => sum + item.quantity, 0);
-  // }
+  setAppliedCoupon(coupon:string|couponProperties){
+  this.appliedCoupon = coupon
+  this.updatedAt = new Date().toISOString();
+  this.modifiedFields.appliedCoupon =true;
+  this.modifiedFields.updatedAt = true;
+  }
+  setDiscountAmount(amount:number){
+  this.discountAmount = amount
+  this.updatedAt = new Date().toISOString();
+  this.modifiedFields.discountAmount =true;
+  this.modifiedFields.updatedAt = true;
+  }
 
   sanitizeCart() {
     const cart = {} as Partial<cartProperties>;
@@ -143,7 +88,13 @@ export interface CartItem {
 
 export type cartProperties = Omit<
   Cart,
-  "sanitizeCart" | "modifiedFields" | "setItem" | "setTotalAmount" | "clearModifiedFields"
+  "sanitizeCart" |
+  "modifiedFields" | 
+  "setItem" | 
+  "setTotalAmount" |
+  "setAppliedCoupon" |
+  "setDiscountAmount" |
+  "clearModifiedFields"
 >;
 
 type modifiedFields = {

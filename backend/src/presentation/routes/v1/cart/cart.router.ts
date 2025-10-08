@@ -5,10 +5,8 @@ import { authenticateUser } from "@/presentation/middleware/auth.middleware";
 const router = Router();
 const cartController = new CartController();
 
-// Apply authentication middleware to all cart routes
 router.use(authenticateUser);
 
-// Add item to cart
 router.post("/add", cartController.addToCart.bind(cartController));
 
 // Get user's cart
