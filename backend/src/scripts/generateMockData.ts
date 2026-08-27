@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import ProductModel from "@/infrastructure/model/product.model";
-import CategoryModel, { Icategory } from "@/infrastructure/model/category.model";
-import { env } from "@/infrastructure/config/environment";
+import ProductModel from "@/modules/product/product.model";
+import CategoryModel from "@/modules/category/category.model";
+import { env } from "@/shared/config/environment";
 
 // Sample categories data
 const categoriesData = [
