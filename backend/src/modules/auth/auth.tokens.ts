@@ -7,11 +7,6 @@ export const AUTH_TOKENS = {
   Controller: Symbol("AuthController"),
 };
 
-export const ADMIN_TOKENS = {
-  Repository: Symbol("AdminRepository"),
-  Service: Symbol("AdminService"),
-};
-
 export function registerAuthModule(): void {
   container.register(AUTH_TOKENS.Service, { useClass: AuthService });
   container.register(AUTH_TOKENS.Controller, { useClass: AuthController });

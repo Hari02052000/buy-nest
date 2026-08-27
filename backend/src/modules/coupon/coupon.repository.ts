@@ -1,46 +1,86 @@
 import { injectable } from "tsyringe";
+import CouponModel from "./coupon.model";
 import { Coupon, CouponDocument } from "./coupon.entity";
 import { APIError } from "@/shared/errors";
 
-// TODO: Implement repository methods with CouponModel
 @injectable()
 export class CouponRepository {
   async findByCode(code: string): Promise<Coupon | null> {
-    // TODO: Implement using CouponModel.findOne({ code: code.toUpperCase(), isActive: true })
-    throw new APIError("Not implemented");
+    try {
+      const doc = await CouponModel.findOne({ code: code.toUpperCase(), isActive: true });
+      if (!doc) return null;
+      return Coupon.fromDocument(doc);
+    } catch (error) {
+      throw new APIError("Failed to find coupon");
+    }
   }
 
   async findById(id: string): Promise<Coupon | null> {
-    // TODO: Implement using CouponModel.findById(id)
-    throw new APIError("Not implemented");
+    try {
+      const doc = await CouponModel.findById(id);
+      if (!doc) return null;
+      return Coupon.fromDocument(doc);
+    } catch (error) {
+      throw new APIError("Failed to find coupon");
+    }
   }
 
   async create(coupon: Coupon): Promise<Coupon> {
-    // TODO: Implement using CouponModel.create()
-    throw new APIError("Not implemented");
+    try {
+      const doc = new CouponModel({
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        minimumOrderAmount: coupon.minimumOrderAmount,
+        maxDiscountAmount: coupon.maxDiscountAmount,
+        expiryDate: coupon.expiryDate,
+        usageLimit: coupon.usageLimit,
+        usedCount: coupon.usedCount,
+        isActive: coupon.isActive,
+      });
+      const saved = await doc.save();
+      return Coupon.fromDocument(saved);
+    } catch (error) {
+      throw new APIError("Failed to create coupon");
+    }
   }
 
   async update(id: string, data: Partial<Coupon>): Promise<Coupon | null> {
-    // TODO: Implement using CouponModel.findByIdAndUpdate()
-    throw new APIError("Not implemented");
+    try {
+      const doc = await CouponModel.findByIdAndUpdate(id, { $set: data }, { new: true });
+      if (!doc) return null;
+      return Coupon.fromDocument(doc);
+    } catch (error) {
+      throw new APIError("Failed to update coupon");
+    }
   }
 
   async incrementUsageCount(id: string): Promise<void> {
-    // TODO: Implement using CouponModel.findByIdAndUpdate(id, { $inc: { usedCount: 1 } })
-    throw new APIError("Not implemented");
+    try {
+      await CouponModel.findByIdAndUpdate(id, { $inc: { usedCount: 1 } });
+    } catch (error) {
+      throw new APIError("Failed to increment coupon usage");
+    }
   }
 
   async findAll(): Promise<Coupon[]> {
-    // TODO: Implement using CouponModel.find().sort({ createdAt: -1 })
-    throw new APIError("Not implemented");
+    try {
+      const docs = await CouponModel.find().sort({ createdAt: -1 });
+      return docs.map((doc) => Coupon.fromDocument(doc));
+    } catch (error) {
+      throw new APIError("Failed to fetch coupons");
+    }
   }
 
   async findActiveCoupons(): Promise<Coupon[]> {
-    // TODO: Implement using CouponModel.find({ isActive: true, expiryDate: { $gte: new Date() } })
-    throw new APIError("Not implemented");
-  }
-
-  private mapToCoupon(doc: CouponDocument): Coupon {
-    return Coupon.fromDocument(doc);
+    try {
+      const docs = await CouponModel.find({
+        isActive: true,
+        expiryDate: { $gte: new Date() },
+      });
+      return docs.map((doc) => Coupon.fromDocument(doc));
+    } catch (error) {
+      throw new APIError("Failed to fetch active coupons");
+    }
   }
 }

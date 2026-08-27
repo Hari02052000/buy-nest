@@ -1,8 +1,11 @@
 import { injectable, inject } from "tsyringe";
 import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import { AdminService } from "./admin.service";
 import { ADMIN_TOKENS } from "./admin.tokens";
+import { SHARED_TOKENS } from "@/shared/tokens";
 import { ResponseUtils } from "@/shared/utils/response.utils";
+import { ValidationError } from "@/shared/errors";
 
 @injectable()
 export class AdminController {
@@ -54,7 +57,11 @@ export class AdminController {
 
   refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const result = await this.adminService.refreshToken(req.user!.id);
+      const refreshToken = req.cookies.refresh_token_admin;
+      if (!refreshToken) throw new ValidationError("Refresh token required");
+
+      const payload = jwt.verify(refreshToken, process.env.APP_SECRET!) as { id: string };
+      const result = await this.adminService.refreshToken(payload.id);
 
       res.cookie("access_token_admin", result.access_token, {
         httpOnly: true,

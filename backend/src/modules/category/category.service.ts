@@ -5,7 +5,7 @@ import type { SanitizedCategory, CategoryTreeItem } from "./category.entity";
 import { SHARED_TOKENS } from "@/shared/tokens";
 import type { CloudUtils } from "@/shared/utils/cloud.utils";
 import { validateCreateCategory, validateEditCategory } from "@/shared/validators/category.validator";
-import { ValidationError, AuthorizeError } from "@/shared/errors";
+import { ValidationError } from "@/shared/errors";
 
 @injectable()
 export class CategoryService {
@@ -17,7 +17,6 @@ export class CategoryService {
   async createCategory(
     file: Express.Multer.File,
     body: any,
-    adminToken: string,
   ): Promise<SanitizedCategory> {
     if (!file) throw new ValidationError("Category image not found");
 
@@ -50,12 +49,12 @@ export class CategoryService {
   async getCategory(
     limit: number,
     page: number,
-    adminToken?: string,
+    isAdmin?: boolean,
   ): Promise<CategoryTreeItem[]> {
     const skip = (page - 1) * limit;
     const allCategories = await this.categoryRepo.findAll(limit, skip);
 
-    const categories = adminToken
+    const categories = isAdmin
       ? allCategories
       : allCategories.filter((cat) => cat.isListed);
 
@@ -88,7 +87,7 @@ export class CategoryService {
     return subCategories.map((sub) => sub.sanitize());
   }
 
-  async editCategory(id: string, reqBody: any, adminToken: string): Promise<SanitizedCategory> {
+  async editCategory(id: string, reqBody: any): Promise<SanitizedCategory> {
     const input = validateEditCategory(reqBody);
     const category = await this.categoryRepo.findById(id);
 
@@ -105,7 +104,6 @@ export class CategoryService {
   async changeListStatus(
     id: string,
     isListed: boolean,
-    adminToken: string,
   ): Promise<SanitizedCategory> {
     const category = await this.categoryRepo.findById(id);
     category.setIsListed(isListed);
@@ -116,7 +114,6 @@ export class CategoryService {
   async editCategoryImage(
     id: string,
     file: Express.Multer.File,
-    adminToken: string,
   ): Promise<SanitizedCategory> {
     if (!file) throw new ValidationError("Image not found");
 

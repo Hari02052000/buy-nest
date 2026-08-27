@@ -12,8 +12,7 @@ export class CategoryController {
 
   createCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
-      const category = await this.categoryService.createCategory(req.file!, req.body, token);
+      const category = await this.categoryService.createCategory(req.file!, req.body);
       res.status(201).json(ResponseUtils.success({ category }));
     } catch (error) {
       next(error);
@@ -24,8 +23,8 @@ export class CategoryController {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const page = req.query.page ? parseInt(req.query.page as string) : 1;
-      const token = req.cookies.access_token_admin;
-      const categories = await this.categoryService.getCategory(limit, page, token);
+      const isAdmin = !!req.cookies.access_token_admin;
+      const categories = await this.categoryService.getCategory(limit, page, isAdmin);
       res.json(ResponseUtils.success({ categories }));
     } catch (error) {
       next(error);
@@ -52,8 +51,7 @@ export class CategoryController {
 
   editCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
-      const category = await this.categoryService.editCategory(req.params.id, req.body, token);
+      const category = await this.categoryService.editCategory(req.params.id, req.body);
       res.json(ResponseUtils.success({ category }));
     } catch (error) {
       next(error);
@@ -62,9 +60,8 @@ export class CategoryController {
 
   changeListStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
-      const isListed = req.body.isList !== "false";
-      const category = await this.categoryService.changeListStatus(req.params.id, isListed, token);
+      const isListed = req.body.isListed;
+      const category = await this.categoryService.changeListStatus(req.params.id, isListed);
       res.json(ResponseUtils.success({ category }));
     } catch (error) {
       next(error);
@@ -73,8 +70,7 @@ export class CategoryController {
 
   uploadCategoryImage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
-      const category = await this.categoryService.editCategoryImage(req.params.id, req.file!, token);
+      const category = await this.categoryService.editCategoryImage(req.params.id, req.file!);
       res.json(ResponseUtils.success({ category }));
     } catch (error) {
       next(error);

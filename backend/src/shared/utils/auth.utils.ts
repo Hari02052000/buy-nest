@@ -25,10 +25,10 @@ export const authUtils: AuthUtils = {
   },
 
   generateAccessToken(email: string, id: string): string {
-    return jwt.sign({ id, email }, env.APP_SECRET, { expiresIn: "15m" });
+    return jwt.sign({ id, email, type: "access" }, env.APP_SECRET, { expiresIn: "15m" });
   },
 
   generateRefreshToken(id: string): string {
-    return jwt.sign({ id }, env.APP_SECRET, { expiresIn: "1d" });
+    return jwt.sign({ id, type: "refresh" }, env.APP_SECRET, { expiresIn: "1d" });
   },
 };

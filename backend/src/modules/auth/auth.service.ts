@@ -1,11 +1,12 @@
 import { injectable, inject } from "tsyringe";
 import type { UserRepository } from "@/modules/user/user.repository";
 import { User } from "@/modules/user/user.entity";
-import AdminModel from "@/modules/admin/admin.model";
+import type { AdminRepository } from "@/modules/admin/admin.repository";
 import { USER_TOKENS } from "@/modules/user/user.tokens";
+import { ADMIN_TOKENS } from "@/modules/admin/admin.tokens";
 import { SHARED_TOKENS } from "@/shared/tokens";
 import type { AuthUtils } from "@/shared/utils/auth.utils";
-import { ValidationError, AuthorizeError, APIError } from "@/shared/errors";
+import { ValidationError, APIError } from "@/shared/errors";
 
 export interface UserAuthTokens {
   access_token: string;
@@ -39,6 +40,7 @@ export interface AdminAuthTokens {
 export class AuthService {
   constructor(
     @inject(USER_TOKENS.Repository) private userRepo: UserRepository,
+    @inject(ADMIN_TOKENS.Repository) private adminRepo: AdminRepository,
     @inject(SHARED_TOKENS.AuthUtils) private authUtils: AuthUtils,
   ) {}
 
@@ -109,7 +111,7 @@ export class AuthService {
   }
 
   async adminLogin(email: string, password: string): Promise<AdminAuthTokens> {
-    const admin = await this.getAdminByEmail(email);
+    const admin = await this.adminRepo.findByEmail(email);
     if (!admin) throw new ValidationError("Invalid email or password");
 
     const isValid = await this.authUtils.validatePassword(password, admin.password || "");
@@ -117,20 +119,20 @@ export class AuthService {
 
     const access_token = this.authUtils.generateAccessToken(admin.email, admin.id);
     const refresh_token = this.authUtils.generateRefreshToken(admin.id);
-    await this.updateAdminRefreshToken(admin.id, refresh_token);
+    await this.adminRepo.update(admin.id, { refresh_token } as any);
 
-    return { access_token, refresh_token, admin: this.sanitizeAdmin(admin) };
+    return { access_token, refresh_token, admin: admin.sanitize() as any };
   }
 
   async adminRefreshToken(userId: string): Promise<AdminAuthTokens> {
-    const admin = await this.getAdminById(userId);
+    const admin = await this.adminRepo.findById(userId);
     if (!admin) throw new ValidationError("Admin not found");
 
     const access_token = this.authUtils.generateAccessToken(admin.email, admin.id);
     const refresh_token = this.authUtils.generateRefreshToken(admin.id);
-    await this.updateAdminRefreshToken(admin.id, refresh_token);
+    await this.adminRepo.update(admin.id, { refresh_token } as any);
 
-    return { access_token, refresh_token, admin: this.sanitizeAdmin(admin) };
+    return { access_token, refresh_token, admin: admin.sanitize() as any };
   }
 
   async logoutUser(userId: string): Promise<boolean> {
@@ -139,54 +141,7 @@ export class AuthService {
   }
 
   async logoutAdmin(userId: string): Promise<boolean> {
-    await this.updateAdminRefreshToken(userId, "");
+    await this.adminRepo.update(userId, { refresh_token: "" } as any);
     return true;
-  }
-
-  private async getAdminByEmail(email: string) {
-    try {
-      const doc = await AdminModel.findOne({ email });
-      if (!doc) return null;
-      return this.mapAdminDoc(doc);
-    } catch {
-      return null;
-    }
-  }
-
-  private async getAdminById(id: string) {
-    try {
-      const doc = await AdminModel.findById(id);
-      if (!doc) return null;
-      return this.mapAdminDoc(doc);
-    } catch {
-      return null;
-    }
-  }
-
-  private async updateAdminRefreshToken(id: string, refresh_token: string) {
-    try {
-      await AdminModel.findByIdAndUpdate(id, { $set: { refresh_token } });
-    } catch {
-      throw new APIError("Failed to update admin");
-    }
-  }
-
-  private mapAdminDoc(doc: any) {
-    return {
-      id: doc._id.toString(),
-      userName: doc.userName,
-      email: doc.email,
-      password: doc.password,
-      salt: doc.salt,
-      role: doc.role,
-      refresh_token: doc.refresh_token || "",
-      createdAt: doc.createdAt?.toISOString?.() || new Date().toISOString(),
-      updatedAt: doc.updatedAt?.toISOString?.() || new Date().toISOString(),
-    };
-  }
-
-  private sanitizeAdmin(admin: any) {
-    const { password, salt, refresh_token, ...safe } = admin;
-    return safe;
   }
 }

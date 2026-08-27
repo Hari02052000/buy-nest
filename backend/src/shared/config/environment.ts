@@ -16,7 +16,7 @@ export const env = {
   PORT: parseInt(process.env.PORT || "5000", 10),
 
   DB_URL: requireEnv("DB_URL"),
-  APP_SECRET: requireEnv("APP_SCERET"),
+  APP_SECRET: requireEnv("APP_SECRET"),
 
   cloud_name: process.env.cloudinary_cloud_name || "",
   api_key: process.env.cloudinary_api_key || "",

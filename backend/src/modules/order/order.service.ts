@@ -41,14 +41,20 @@ export class OrderService {
       }
     }
 
-    const totalAmountPayable = userCart.totalAmount;
-
-    const orderItems: OrderItem[] = userCart.items.map((item) => ({
-      productId: item.product,
-      quantity: item.quantity,
-      price: item.price,
-      totalPrice: item.totalPrice,
-    }));
+    // Use current product prices instead of stale cart prices
+    let totalAmountPayable = 0;
+    const orderItems: OrderItem[] = userCart.items.map((item) => {
+      const product = products.find((p) => p.id === item.product);
+      const currentPrice = product ? product.price : item.price;
+      const totalPrice = currentPrice * item.quantity;
+      totalAmountPayable += totalPrice;
+      return {
+        productId: item.product,
+        quantity: item.quantity,
+        price: currentPrice,
+        totalPrice,
+      };
+    });
 
     const couponId = input.coupon?.isApplied ? input.coupon.couponId : undefined;
 
@@ -72,9 +78,8 @@ export class OrderService {
       }
     }
 
-    if (input.paymentMethod === "cod") {
-      await this.cartRepo.delete(userId);
-    }
+    // Clear cart for all payment methods
+    await this.cartRepo.delete(userId);
 
     return savedOrder.sanitize();
   }
@@ -85,8 +90,6 @@ export class OrderService {
     }
 
     // TODO: Implement Stripe payment verification
-    // const paymentInfo = await this.paymentUtils.verifyPayment(paymentId);
-    // For now, throw not implemented
     throw new ValidationError("Online payment verification not yet implemented");
   }
 

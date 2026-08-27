@@ -3,7 +3,7 @@ import type { ProductRepository } from "./product.repository";
 import { Product as ProductEntity, type CreateProductInput, type ProductImage, type SanitizedProduct } from "./product.entity";
 import { SHARED_TOKENS } from "@/shared/tokens";
 import type { CloudUtils } from "@/shared/utils/cloud.utils";
-import { ValidationError, AuthorizeError } from "@/shared/errors";
+import { ValidationError } from "@/shared/errors";
 
 export interface ProductSearchFilters {
   query?: string;
@@ -25,26 +25,17 @@ export interface ProductSearchResult {
   skip: number;
 }
 
-export interface AdminTokenResult {
-  isVerified: boolean;
-  payload: Record<string, unknown>;
-}
-
 @injectable()
 export class ProductService {
   constructor(
     private productRepo: ProductRepository,
     @inject(SHARED_TOKENS.CloudUtils) private cloudUtils: CloudUtils,
-    @inject(SHARED_TOKENS.TokenUtils) private tokenUtils: { isValidAdminToken(token: string): AdminTokenResult },
   ) {}
 
   async createProduct(
     files: Express.Multer.File[],
     reqBody: Record<string, unknown>,
-    adminToken: string,
   ): Promise<SanitizedProduct> {
-    const { isVerified } = this.tokenUtils.isValidAdminToken(adminToken);
-    if (!isVerified) throw new AuthorizeError();
     if (!files || files.length === 0) throw new ValidationError("images is empty");
 
     const input = this.validateCreateInput(reqBody);
@@ -62,7 +53,7 @@ export class ProductService {
     skip: number = 0,
     category?: string,
     search?: string,
-    adminToken?: string,
+    isAdmin?: boolean,
     brand?: string,
     model?: string,
     minPrice?: number,
@@ -71,9 +62,7 @@ export class ProductService {
     const allProducts = await this.productRepo.getPopulated(limit, skip, category, search, brand, model, minPrice, maxPrice);
 
     let products: ProductEntity[];
-    if (adminToken) {
-      const { isVerified } = this.tokenUtils.isValidAdminToken(adminToken);
-      if (!isVerified) throw new AuthorizeError();
+    if (isAdmin) {
       products = allProducts;
     } else {
       products = allProducts.filter(
@@ -101,11 +90,7 @@ export class ProductService {
   async editProduct(
     id: string,
     reqBody: Record<string, unknown>,
-    adminToken: string,
   ): Promise<SanitizedProduct> {
-    const { isVerified } = this.tokenUtils.isValidAdminToken(adminToken);
-    if (!isVerified) throw new AuthorizeError();
-
     const editFields = this.validateEditInput(reqBody);
     const product = await this.productRepo.findById(id);
     if (!product) throw new ValidationError("product not found");
@@ -159,10 +144,7 @@ export class ProductService {
   async uploadImages(
     id: string,
     files: Express.Multer.File[],
-    adminToken: string,
   ): Promise<SanitizedProduct> {
-    const { isVerified } = this.tokenUtils.isValidAdminToken(adminToken);
-    if (!isVerified) throw new AuthorizeError();
     if (!files || files.length === 0) throw new ValidationError("images is empty");
 
     const product = await this.productRepo.findById(id);
@@ -179,10 +161,7 @@ export class ProductService {
   async deleteImage(
     id: string,
     image: ProductImage,
-    adminToken: string,
   ): Promise<SanitizedProduct> {
-    const { isVerified } = this.tokenUtils.isValidAdminToken(adminToken);
-    if (!isVerified) throw new AuthorizeError();
     if (!image || !image.id || !image.url) throw new ValidationError("image not found");
 
     const product = await this.productRepo.findById(id);
@@ -199,11 +178,7 @@ export class ProductService {
   async changeListStatus(
     id: string,
     isListed: boolean,
-    adminToken: string,
   ): Promise<SanitizedProduct> {
-    const { isVerified } = this.tokenUtils.isValidAdminToken(adminToken);
-    if (!isVerified) throw new AuthorizeError();
-
     const updated = await this.productRepo.update(id, { isListed });
     if (!updated) throw new ValidationError("product not found");
     return updated.sanitize();
@@ -238,10 +213,18 @@ export class ProductService {
 
     if (body.name !== undefined) result.name = body.name as string;
     if (body.description !== undefined) result.description = body.description as string;
-    if (body.price !== undefined) result.price = parseFloat(body.price as string);
+    if (body.price !== undefined) {
+      const price = parseFloat(body.price as string);
+      if (isNaN(price) || price < 0) throw new ValidationError("invalid price");
+      result.price = price;
+    }
     if (body.brandName !== undefined) result.brandName = body.brandName as string;
     if (body.modelName !== undefined) result.modelName = body.modelName as string;
-    if (body.stock !== undefined) result.stock = parseInt(body.stock as string, 10);
+    if (body.stock !== undefined) {
+      const stock = parseInt(body.stock as string, 10);
+      if (isNaN(stock) || stock < 0) throw new ValidationError("invalid stock");
+      result.stock = stock;
+    }
 
     return result;
   }

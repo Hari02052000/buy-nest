@@ -5,6 +5,10 @@ import CategoryModel from "@/modules/category/category.model";
 import { Product, ProductDocument, ProductCategoryValue, ProductCategory } from "./product.entity";
 import { APIError, ValidationError } from "@/shared/errors";
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 @injectable()
 export class ProductRepository {
   async save(product: Product): Promise<Product> {
@@ -84,23 +88,24 @@ export class ProductRepository {
       const queryObj: Record<string, unknown> = { isListed: true };
 
       if (query) {
+        const safeQuery = escapeRegex(query);
         queryObj.$or = [
-          { name: { $regex: query, $options: "i" } },
-          { description: { $regex: query, $options: "i" } },
-          { brandName: { $regex: query, $options: "i" } },
+          { name: { $regex: safeQuery, $options: "i" } },
+          { description: { $regex: safeQuery, $options: "i" } },
+          { brandName: { $regex: safeQuery, $options: "i" } },
         ];
       }
 
       if (category) {
-        queryObj.category = { $regex: category, $options: "i" };
+        queryObj.category = { $regex: escapeRegex(category), $options: "i" };
       }
 
       if (brand) {
-        queryObj.brandName = { $regex: brand, $options: "i" };
+        queryObj.brandName = { $regex: escapeRegex(brand), $options: "i" };
       }
 
       if (model) {
-        queryObj.modelName = { $regex: model, $options: "i" };
+        queryObj.modelName = { $regex: escapeRegex(model), $options: "i" };
       }
 
       if (minPrice !== undefined || maxPrice !== undefined) {
@@ -133,23 +138,24 @@ export class ProductRepository {
       const queryObj: Record<string, unknown> = { isListed: true };
 
       if (query) {
+        const safeQuery = escapeRegex(query);
         queryObj.$or = [
-          { name: { $regex: query, $options: "i" } },
-          { description: { $regex: query, $options: "i" } },
-          { brandName: { $regex: query, $options: "i" } },
+          { name: { $regex: safeQuery, $options: "i" } },
+          { description: { $regex: safeQuery, $options: "i" } },
+          { brandName: { $regex: safeQuery, $options: "i" } },
         ];
       }
 
       if (category) {
-        queryObj.category = { $regex: category, $options: "i" };
+        queryObj.category = { $regex: escapeRegex(category), $options: "i" };
       }
 
       if (brand) {
-        queryObj.brandName = { $regex: brand, $options: "i" };
+        queryObj.brandName = { $regex: escapeRegex(brand), $options: "i" };
       }
 
       if (model) {
-        queryObj.modelName = { $regex: model, $options: "i" };
+        queryObj.modelName = { $regex: escapeRegex(model), $options: "i" };
       }
 
       if (minPrice !== undefined || maxPrice !== undefined) {
@@ -187,19 +193,20 @@ export class ProductRepository {
       }
 
       if (search) {
+        const safeSearch = escapeRegex(search);
         query.$or = [
-          { name: { $regex: search, $options: "i" } },
-          { brandName: { $regex: search, $options: "i" } },
-          { modelName: { $regex: search, $options: "i" } },
+          { name: { $regex: safeSearch, $options: "i" } },
+          { brandName: { $regex: safeSearch, $options: "i" } },
+          { modelName: { $regex: safeSearch, $options: "i" } },
         ];
       }
 
       if (brand) {
-        query.brandName = { $regex: brand, $options: "i" };
+        query.brandName = { $regex: escapeRegex(brand), $options: "i" };
       }
 
       if (model) {
-        query.modelName = { $regex: model, $options: "i" };
+        query.modelName = { $regex: escapeRegex(model), $options: "i" };
       }
 
       if (minPrice !== undefined || maxPrice !== undefined) {

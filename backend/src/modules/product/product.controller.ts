@@ -12,11 +12,9 @@ export class ProductController {
 
   createProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
       const product = await this.productService.createProduct(
         req.files as Express.Multer.File[],
         req.body,
-        token,
       );
       res.status(201).json(ResponseUtils.success({ product }));
     } catch (error) {
@@ -34,10 +32,10 @@ export class ProductController {
       const model = (req.query.model as string) || undefined;
       const minPrice = typeof req.query.minPrice === "string" ? parseFloat(req.query.minPrice) : undefined;
       const maxPrice = typeof req.query.maxPrice === "string" ? parseFloat(req.query.maxPrice) : undefined;
-      const token = req.cookies.access_token_admin || undefined;
+      const isAdmin = !!req.cookies.access_token_admin;
 
       const products = await this.productService.getProducts(
-        limit, skip, category, search, token, brand, model, minPrice, maxPrice,
+        limit, skip, category, search, isAdmin, brand, model, minPrice, maxPrice,
       );
       res.status(200).json(ResponseUtils.success({ products }));
     } catch (error) {
@@ -78,8 +76,7 @@ export class ProductController {
 
   editProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
-      const product = await this.productService.editProduct(req.params.id, req.body, token);
+      const product = await this.productService.editProduct(req.params.id, req.body);
       res.status(200).json(ResponseUtils.success({ product }));
     } catch (error) {
       next(error);
@@ -88,11 +85,9 @@ export class ProductController {
 
   uploadProductImages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
       const product = await this.productService.uploadImages(
         req.params.id,
         req.files as Express.Multer.File[],
-        token,
       );
       res.status(200).json(ResponseUtils.success({ product }));
     } catch (error) {
@@ -102,9 +97,8 @@ export class ProductController {
 
   deleteProductImage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
       const image = req.body.image;
-      const product = await this.productService.deleteImage(req.params.id, image, token);
+      const product = await this.productService.deleteImage(req.params.id, image);
       res.status(200).json(ResponseUtils.success({ product }));
     } catch (error) {
       next(error);
@@ -113,9 +107,8 @@ export class ProductController {
 
   changeListStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = req.cookies.access_token_admin;
       const { isListed } = req.body;
-      const product = await this.productService.changeListStatus(req.params.id, isListed, token);
+      const product = await this.productService.changeListStatus(req.params.id, isListed);
       res.status(200).json(ResponseUtils.success({ product }));
     } catch (error) {
       next(error);
