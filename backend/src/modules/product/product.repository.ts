@@ -97,7 +97,12 @@ export class ProductRepository {
       }
 
       if (category) {
-        queryObj.category = { $regex: escapeRegex(category), $options: "i" };
+        const categoryId = new Types.ObjectId(category);
+        const allCategories = await CategoryModel.find({
+          $or: [{ _id: categoryId }, { ancestors: categoryId }],
+        }).select("_id");
+        const categoryIds = allCategories.map((cat: any) => cat._id);
+        queryObj.category = { $in: categoryIds };
       }
 
       if (brand) {
@@ -147,7 +152,12 @@ export class ProductRepository {
       }
 
       if (category) {
-        queryObj.category = { $regex: escapeRegex(category), $options: "i" };
+        const categoryId = new Types.ObjectId(category);
+        const allCategories = await CategoryModel.find({
+          $or: [{ _id: categoryId }, { ancestors: categoryId }],
+        }).select("_id");
+        const categoryIds = allCategories.map((cat: any) => cat._id);
+        queryObj.category = { $in: categoryIds };
       }
 
       if (brand) {

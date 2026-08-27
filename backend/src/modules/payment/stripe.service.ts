@@ -1,5 +1,6 @@
 import { injectable } from "tsyringe";
 import Stripe from "stripe";
+import { env } from "@/shared/config/environment";
 import { APIError } from "@/shared/errors";
 
 interface CreatePaymentIntentRequest {
@@ -17,18 +18,22 @@ interface PaymentIntentResponse {
 
 @injectable()
 export class StripeService {
-  private stripe: Stripe;
+  private stripe: Stripe | null = null;
 
-  constructor() {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new APIError("STRIPE_SECRET_KEY is required");
+  private getClient(): Stripe {
+    if (!this.stripe) {
+      if (!env.stripe_secret_key) {
+        throw new APIError("STRIPE_SECRET_KEY is required");
+      }
+      this.stripe = new Stripe(env.stripe_secret_key);
     }
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    return this.stripe;
   }
 
   async createPaymentIntent(data: CreatePaymentIntentRequest): Promise<PaymentIntentResponse> {
     try {
-      const paymentIntent = await this.stripe.paymentIntents.create({
+      const stripe = this.getClient();
+      const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(data.amount * 100),
         currency: data.currency || "usd",
         customer: data.customerId,
@@ -54,7 +59,8 @@ export class StripeService {
 
   async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
     try {
-      return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+      const stripe = this.getClient();
+      return await stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (error) {
       throw new APIError(
         `Payment retrieval failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -64,11 +70,12 @@ export class StripeService {
 
   async handleWebhook(payload: string, signature: string): Promise<Stripe.Event> {
     try {
+      const stripe = this.getClient();
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
       if (!webhookSecret) {
         throw new APIError("STRIPE_WEBHOOK_SECRET is required");
       }
-      return this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
     } catch (error) {
       throw new APIError(
         `Webhook verification failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -78,7 +85,8 @@ export class StripeService {
 
   async createCustomer(email: string, name?: string): Promise<Stripe.Customer> {
     try {
-      return await this.stripe.customers.create({ email, name });
+      const stripe = this.getClient();
+      return await stripe.customers.create({ email, name });
     } catch (error) {
       throw new APIError(
         `Customer creation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -88,7 +96,8 @@ export class StripeService {
 
   async refundPayment(paymentIntentId: string, amount?: number): Promise<Stripe.Refund> {
     try {
-      return await this.stripe.refunds.create({
+      const stripe = this.getClient();
+      return await stripe.refunds.create({
         payment_intent: paymentIntentId,
         amount: amount ? Math.round(amount * 100) : undefined,
       });

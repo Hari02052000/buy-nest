@@ -5,6 +5,7 @@ import type { OrderItem, SanitizedOrder } from "./order.entity";
 import { ORDER_TOKENS } from "./order.tokens";
 import type { CartRepository } from "@/modules/cart/cart.repository";
 import type { ProductRepository } from "@/modules/product/product.repository";
+import type { CouponRepository } from "@/modules/coupon/coupon.repository";
 import { ValidationError, AuthorizeError } from "@/shared/errors";
 import { validateCreateOrder } from "@/shared/validators/order.validator";
 
@@ -21,6 +22,7 @@ export class OrderService {
     @inject(ORDER_TOKENS.Repository) private orderRepo: OrderRepository,
     @inject(ORDER_TOKENS.CartRepository) private cartRepo: CartRepository,
     @inject(ORDER_TOKENS.ProductRepository) private productRepo: ProductRepository,
+    @inject(ORDER_TOKENS.CouponRepository) private couponRepo: CouponRepository,
   ) {}
 
   async createOrder(userId: string, reqBody: unknown): Promise<SanitizedOrder> {
@@ -56,14 +58,34 @@ export class OrderService {
       };
     });
 
-    const couponId = input.coupon?.isApplied ? input.coupon.couponId : undefined;
+    // Apply coupon discount if applicable
+    let discountAmount = 0;
+    let couponId: string | undefined;
+
+    if (input.coupon?.isApplied && input.coupon.couponId) {
+      const coupon = await this.couponRepo.findById(input.coupon.couponId);
+      if (coupon && coupon.canBeUsed && totalAmountPayable >= coupon.minimumOrderAmount) {
+        if (coupon.discountType === "percentage") {
+          discountAmount = (totalAmountPayable * coupon.discountValue) / 100;
+          if (coupon.maxDiscountAmount > 0) {
+            discountAmount = Math.min(discountAmount, coupon.maxDiscountAmount);
+          }
+        } else {
+          discountAmount = Math.min(coupon.discountValue, totalAmountPayable);
+        }
+        couponId = coupon.id;
+        await this.couponRepo.incrementUsageCount(coupon.id);
+      }
+    }
+
+    const finalAmount = totalAmountPayable - discountAmount;
 
     const order = OrderEntity.create({
       items: orderItems,
       address: input.addressId,
       user: userId,
       paymentMethod: input.paymentMethod,
-      payableAmount: totalAmountPayable,
+      payableAmount: finalAmount,
       appliedCoupon: couponId,
     });
 

@@ -1,9 +1,11 @@
 import { injectable, inject } from "tsyringe";
 import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import { AuthService } from "./auth.service";
 import { AUTH_TOKENS } from "./auth.tokens";
 import { ResponseUtils } from "@/shared/utils/response.utils";
 import { ValidationError } from "@/shared/errors";
+import { env } from "@/shared/config/environment";
 
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
@@ -46,7 +48,9 @@ export class AuthController {
       const refreshToken = req.cookies.refresh_token;
       if (!refreshToken) throw new ValidationError("Refresh token required");
 
-      const payload = this.decodeToken(refreshToken);
+      const payload = jwt.verify(refreshToken, env.APP_SECRET) as { id: string; type?: string };
+      if (payload.type !== "refresh") throw new ValidationError("Invalid token type");
+
       const result = await this.authService.refreshToken(payload.id);
 
       this.setUserCookies(res, result.access_token, result.refresh_token);
@@ -77,7 +81,9 @@ export class AuthController {
       const refreshToken = req.cookies.refresh_token_admin;
       if (!refreshToken) throw new ValidationError("Admin refresh token required");
 
-      const payload = this.decodeToken(refreshToken);
+      const payload = jwt.verify(refreshToken, env.APP_SECRET) as { id: string; type?: string };
+      if (payload.type !== "refresh") throw new ValidationError("Invalid token type");
+
       const result = await this.authService.adminRefreshToken(payload.id);
 
       this.setAdminCookies(res, result.access_token, result.refresh_token);
@@ -99,7 +105,7 @@ export class AuthController {
       this.setUserCookies(res, result.access_token, result.refresh_token);
       this.clearAdminCookies(res);
 
-      res.redirect(`${process.env.frontend_url_home || "http://localhost:5174"}/`);
+      res.redirect(env.frontend_url_home);
     } catch (error) {
       next(error);
     }
@@ -151,16 +157,5 @@ export class AuthController {
   private clearAdminCookies(res: Response): void {
     res.cookie("access_token_admin", "", { httpOnly: true, expires: new Date(0) });
     res.cookie("refresh_token_admin", "", { httpOnly: true, expires: new Date(0) });
-  }
-
-  private decodeToken(token: string): { id: string } {
-    try {
-      const jwt = require("jsonwebtoken");
-      const { env } = require("@/shared/config/environment");
-      const payload = jwt.verify(token, env.APP_SECRET);
-      return { id: payload.id };
-    } catch {
-      throw new ValidationError("Invalid token");
-    }
   }
 }

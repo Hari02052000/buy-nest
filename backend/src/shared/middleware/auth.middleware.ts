@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import AdminModel from "@/modules/admin/admin.model";
 import { env } from "../config/environment";
-import { AuthorizeError } from "../errors";
 
 export interface JwtUserPayload {
   id: string;
@@ -91,14 +91,21 @@ export const authenticateAdmin = async (
       return;
     }
 
+    // Verify the token belongs to an actual admin in the database
+    const admin = await AdminModel.findById(payload.id);
+    if (!admin) {
+      res.status(401).json({ success: false, message: "Admin not found" });
+      return;
+    }
+
     req.user = {
       id: payload.id,
-      userName: payload.userName || "",
-      email: payload.email || "",
+      userName: admin.userName || "",
+      email: admin.email || "",
       isEmailVerified: true,
       profile: "",
-      createdAt: payload.createdAt || "",
-      updatedAt: payload.updatedAt || "",
+      createdAt: admin.createdAt?.toISOString?.() || "",
+      updatedAt: admin.updatedAt?.toISOString?.() || "",
     };
 
     next();
@@ -113,16 +120,4 @@ export const authenticateAdmin = async (
     }
     res.status(401).json({ success: false, message: "Admin authentication failed" });
   }
-};
-
-export const requireRole = (...allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({ success: false, message: "Not authenticated" });
-      return;
-    }
-    // Role is checked from DB in service layer for accuracy
-    // This middleware is a fast pre-filter based on JWT claims
-    next();
-  };
 };

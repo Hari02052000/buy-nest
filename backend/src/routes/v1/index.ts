@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authLimiter } from "@/shared/middleware/rate-limiter";
 import authRoutes from "@/modules/auth/auth.routes";
 import userRoutes from "@/modules/user/user.routes";
 import adminRoutes from "@/modules/admin/admin.routes";
@@ -13,7 +14,7 @@ import paymentRoutes from "@/modules/payment/payment.routes";
 
 const router = Router();
 
-router.use("/auth", authRoutes);
+router.use("/auth", authLimiter, authRoutes);
 router.use("/user", userRoutes);
 router.use("/admin", adminRoutes);
 router.use("/product", productRoutes);

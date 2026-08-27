@@ -1,14 +1,16 @@
 import { injectable, inject } from "tsyringe";
 import { AddressRepository } from "./address.repository";
 import { Address, CreateAddressInput } from "./address.entity";
+import { validateCreateAddress } from "@/shared/validators/address.validator";
 import { ValidationError } from "@/shared/errors";
 
 @injectable()
 export class AddressService {
   constructor(private addressRepo: AddressRepository) {}
 
-  async createAddress(userId: string, data: CreateAddressInput): Promise<Address> {
-    const address = Address.create({ ...data, user: userId });
+  async createAddress(userId: string, data: unknown): Promise<Address> {
+    const validated = validateCreateAddress(data);
+    const address = Address.create({ ...validated, user: userId });
     return this.addressRepo.save(address);
   }
 
