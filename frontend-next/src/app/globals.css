@@ -28,6 +28,21 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
 
+  /* Admin-specific */
+  --color-admin-sidebar: var(--admin-sidebar);
+  --color-admin-sidebar-border: var(--admin-sidebar-border);
+  --color-admin-header: var(--admin-header);
+  --color-status-pending: var(--status-pending);
+  --color-status-confirmed: var(--status-confirmed);
+  --color-status-processing: var(--status-processing);
+  --color-status-shipped: var(--status-shipped);
+  --color-status-delivered: var(--status-delivered);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-payment-pending: var(--payment-pending);
+  --color-payment-completed: var(--payment-completed);
+  --color-payment-failed: var(--payment-failed);
+  --color-payment-refunded: var(--payment-refunded);
+
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 
@@ -76,6 +91,21 @@
   --border: oklch(0.92 0.005 260);
   --input: oklch(0.92 0.005 260);
   --ring: oklch(0.708 0.015 265);
+
+  /* ─── Admin-specific ─── */
+  --admin-sidebar: oklch(0.21 0.012 260);
+  --admin-sidebar-border: oklch(0.28 0.01 260);
+  --admin-header: oklch(1 0 0);
+  --status-pending: oklch(0.7 0.12 75);
+  --status-confirmed: oklch(0.6 0.13 230);
+  --status-processing: oklch(0.6 0.14 290);
+  --status-shipped: oklch(0.62 0.13 210);
+  --status-delivered: oklch(0.62 0.15 150);
+  --status-cancelled: oklch(0.62 0.2 25);
+  --payment-pending: oklch(0.7 0.12 75);
+  --payment-completed: oklch(0.62 0.15 150);
+  --payment-failed: oklch(0.62 0.2 25);
+  --payment-refunded: oklch(0.62 0.05 260);
 }
 
 /* ─── Dark theme ─── */
@@ -113,6 +143,21 @@
   --border: oklch(0.269 0.01 260);
   --input: oklch(0.269 0.01 260);
   --ring: oklch(0.439 0.01 260);
+
+  /* ─── Admin-specific (dark) ─── */
+  --admin-sidebar: oklch(0.12 0.01 260);
+  --admin-sidebar-border: oklch(0.2 0.01 260);
+  --admin-header: oklch(0.145 0.005 260);
+  --status-pending: oklch(0.7 0.12 75);
+  --status-confirmed: oklch(0.6 0.13 230);
+  --status-processing: oklch(0.6 0.14 290);
+  --status-shipped: oklch(0.62 0.13 210);
+  --status-delivered: oklch(0.62 0.15 150);
+  --status-cancelled: oklch(0.62 0.2 25);
+  --payment-pending: oklch(0.7 0.12 75);
+  --payment-completed: oklch(0.62 0.15 150);
+  --payment-failed: oklch(0.62 0.2 25);
+  --payment-refunded: oklch(0.62 0.05 260);
 }
 
 @layer base {
