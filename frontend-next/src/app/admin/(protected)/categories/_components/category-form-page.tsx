@@ -6,17 +6,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FormField } from "@/components/forms/form-field";
+import { FormInput } from "@/components/forms/form-input";
+import { FormSelect } from "@/components/forms/form-select";
 import { FileUpload } from "@/components/forms/file-upload";
 import {
   useCategory,
@@ -57,6 +51,7 @@ export function CategoryFormPage({ id }: { id?: string }) {
     setValue,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -133,28 +128,25 @@ export function CategoryFormPage({ id }: { id?: string }) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="Category Name" htmlFor="name" error={errors.name?.message} required>
-          <Input id="name" {...register("name")} placeholder="Category name" />
-        </FormField>
+        <FormInput
+          label="Category Name"
+          placeholder="Category name"
+          required
+          register={register}
+          name="name"
+          error={errors.name?.message}
+        />
 
-        <FormField label="Parent Category" htmlFor="parentId">
-          <Select
-            value={watch("parentId")}
-            onValueChange={(v) => setValue("parentId", v ?? "")}
-          >
-            <SelectTrigger id="parentId">
-              <SelectValue placeholder="None (top-level)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None (top-level)</SelectItem>
-              {parentOptions.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
+        <FormSelect
+          label="Parent Category"
+          name="parentId"
+          control={control}
+          placeholder="None (top-level)"
+          options={[
+            { value: "", label: "None (top-level)" },
+            ...parentOptions.map((cat) => ({ value: cat.id, label: cat.name })),
+          ]}
+        />
 
         <FormField label="Category Image" error={undefined}>
           <FileUpload

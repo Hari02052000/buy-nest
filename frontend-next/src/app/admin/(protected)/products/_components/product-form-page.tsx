@@ -6,18 +6,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FormField } from "@/components/forms/form-field";
+import { FormInput } from "@/components/forms/form-input";
+import { FormSelect } from "@/components/forms/form-select";
 import { ImageGallery } from "@/components/shared/image-gallery";
 import { useProduct } from "@/lib/query/hooks/useProducts";
 import {
@@ -73,6 +66,7 @@ export function ProductFormPage({ id }: { id?: string }) {
     setValue,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -190,48 +184,74 @@ export function ProductFormPage({ id }: { id?: string }) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="Product Name" htmlFor="name" error={errors.name?.message} required>
-          <Input id="name" {...register("name")} placeholder="Product name" />
-        </FormField>
+        <FormInput
+          label="Product Name"
+          placeholder="Product name"
+          required
+          register={register}
+          name="name"
+          error={errors.name?.message}
+        />
 
-        <FormField label="Description" htmlFor="description" error={errors.description?.message} required>
-          <Textarea id="description" {...register("description")} placeholder="Product description" rows={4} />
-        </FormField>
+        <FormInput
+          label="Description"
+          type="textarea"
+          placeholder="Product description"
+          required
+          register={register}
+          name="description"
+          error={errors.description?.message}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField label="Price" htmlFor="price" error={errors.price?.message} required>
-            <Input id="price" type="number" step="0.01" {...register("price")} placeholder="0.00" />
-          </FormField>
+          <FormInput
+            label="Price"
+            type="number"
+            step={0.01}
+            placeholder="0.00"
+            required
+            register={register}
+            name="price"
+            error={errors.price?.message}
+          />
 
-          <FormField label="Stock" htmlFor="stock" error={errors.stock?.message} required>
-            <Input id="stock" type="number" {...register("stock")} placeholder="0" />
-          </FormField>
+          <FormInput
+            label="Stock"
+            type="number"
+            placeholder="0"
+            required
+            register={register}
+            name="stock"
+            error={errors.stock?.message}
+          />
 
-          <FormField label="Category" htmlFor="category" error={errors.category?.message} required>
-            <Select
-              value={watch("category")}
-              onValueChange={(v) => setValue("category", v ?? "")}
-            >
-              <SelectTrigger id="category">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
+          <FormSelect
+            label="Category"
+            required
+            name="category"
+            control={control}
+            options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+            placeholder="Select category"
+            error={errors.category?.message}
+          />
 
-          <FormField label="Brand" htmlFor="brandName" error={errors.brandName?.message} required>
-            <Input id="brandName" {...register("brandName")} placeholder="Brand name" />
-          </FormField>
+          <FormInput
+            label="Brand"
+            placeholder="Brand name"
+            required
+            register={register}
+            name="brandName"
+            error={errors.brandName?.message}
+          />
 
-          <FormField label="Model" htmlFor="modelName" error={errors.modelName?.message} required>
-            <Input id="modelName" {...register("modelName")} placeholder="Model name" />
-          </FormField>
+          <FormInput
+            label="Model"
+            placeholder="Model name"
+            required
+            register={register}
+            name="modelName"
+            error={errors.modelName?.message}
+          />
         </div>
 
         <FormField label="Product Images" error={undefined}>
