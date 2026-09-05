@@ -13,6 +13,15 @@ interface AdminLayoutProps {
 function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const isLoginPage = pathname === '/admin/login';
+
+  if (isLoginPage) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
