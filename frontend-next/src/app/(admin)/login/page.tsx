@@ -1,6 +1,15 @@
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { AdminLoginForm } from '@/features/auth/components/admin-login-form';
 
 export default function AdminLoginPage() {
+  const cookieStore = cookies();
+  const accessToken = cookieStore.get('access_token_admin');
+
+  if (accessToken) {
+    redirect('/admin');
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-8">

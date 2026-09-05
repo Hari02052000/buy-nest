@@ -1,15 +1,28 @@
 'use client';
 
 import * as React from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sun, Moon, Monitor, LogOut, User } from 'lucide-react';
 import { useTheme } from '@/components/providers/theme-provider';
+import { logoutAdmin } from '@/lib/api/auth';
+import { queryClient } from '@/lib/query-client';
 
 function AdminUserMenu() {
   const [open, setOpen] = React.useState(false);
   const { theme, setTheme } = useTheme();
   const menuRef = React.useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const logoutMutation = useMutation({
+    mutationFn: logoutAdmin,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+      router.push('/admin/login');
+    },
+  });
 
   React.useEffect(() => {
     if (!open) return;
@@ -74,10 +87,12 @@ function AdminUserMenu() {
               <span>{theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'} theme</span>
             </button>
             <button
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
             >
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>{logoutMutation.isPending ? 'Logging out...' : 'Logout'}</span>
             </button>
           </div>
         </div>
