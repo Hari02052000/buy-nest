@@ -1,13 +1,10 @@
 import type { ReactNode } from 'react';
+import { AdminLayout } from '@/components/layout';
 
-export default function AdminLayout({
+export default function AdminRouteLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex-1">{children}</main>
-    </div>
-  );
+  return <AdminLayout>{children}</AdminLayout>;
 }
