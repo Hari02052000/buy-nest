@@ -17,7 +17,7 @@ export async function adminLogin(email: string, password: string): Promise<unkno
 
 export async function getCurrentAdmin(): Promise<unknown> {
   try {
-    const response = await api.get('/auth/admin/me');
+    const response = await api.get('/admin/me');
     return unwrap(response);
   } catch (error) {
     if (error instanceof ApiError) {
@@ -29,7 +29,7 @@ export async function getCurrentAdmin(): Promise<unknown> {
 
 export async function logoutAdmin(): Promise<void> {
   try {
-    await api.post('/auth/admin/logout');
+    await api.post('/admin/logout');
   } catch (error) {
     if (error instanceof ApiError) {
       throw new Error(error.message || 'Logout failed');
