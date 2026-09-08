@@ -1,21 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
 import type { ReactNode } from 'react';
+import '@/app/globals.css';
 import { env } from '@/lib/env';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: {
@@ -49,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <ThemeProvider>
           <QueryProvider>
             {children}

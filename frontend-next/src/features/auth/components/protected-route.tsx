@@ -26,6 +26,5 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   if (!admin || error) {
     return null;
   }
-
   return <>{children}</>;
 }

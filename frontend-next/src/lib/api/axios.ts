@@ -1,8 +1,9 @@
 import axios, { type AxiosError, type AxiosResponse } from 'axios';
-import { env } from '@/lib/env';
+
+const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
-  baseURL: env.NEXT_PUBLIC_API_URL,
+  baseURL,
   withCredentials: true,
 });
 
