@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useId } from 'react';
 import { cn } from '@/lib/cn';
 import { useFormField } from './form-field';
 
@@ -10,7 +10,7 @@ interface FormDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement
 
 function FormDescription({ className, children, ...props }: FormDescriptionProps) {
   const { fieldId } = useFormField();
-  const descriptionId = React.useId();
+  const descriptionId = useId();
 
   const isStandalone = !fieldId;
 

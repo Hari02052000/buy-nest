@@ -1,4 +1,4 @@
-export { FormField, useFormField, type FormFieldProps, type FormFieldContextValue } from './form-field';
+export { FormField, useFormField, useOptionalFormField, type FormFieldProps, type FormFieldContextValue } from './form-field';
 export { FormLabel, type FormLabelProps } from './form-label';
 export { FormInput, type FormInputProps } from './form-input';
 export { FormTextarea, type FormTextareaProps } from './form-textarea';

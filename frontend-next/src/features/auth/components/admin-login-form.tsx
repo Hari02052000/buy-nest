@@ -4,14 +4,12 @@ import * as React from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff } from 'lucide-react';
 import { adminLogin } from '@/lib/api/auth';
 import { adminLoginSchema, type AdminLoginFormValues } from '../schemas/login.schema';
-import { FormField, FormLabel, FormInput, FormMessage } from '@/components/form';
+import { FormInput, FormMessage } from '@/components/form';
 import { Button } from '@/components/ui/button';
 
 function AdminLoginForm() {
-  const [showPassword, setShowPassword] = React.useState(false);
   const [generalError, setGeneralError] = React.useState<string | null>(null);
 
   const form = useForm<AdminLoginFormValues>({
@@ -44,41 +42,25 @@ function AdminLoginForm() {
           <FormMessage variant="error">{generalError}</FormMessage>
         )}
 
-        <FormField
-          name="email"
+        <FormInput
+          label="Email address"
+          type="email"
+          placeholder="admin@buynest.com"
+          autoComplete="email"
+          required
           error={form.formState.errors.email?.message}
-        >
-          <FormLabel>Email address</FormLabel>
-          <FormInput
-            type="email"
-            placeholder="admin@buynest.com"
-            autoComplete="email"
-            required
-          />
-        </FormField>
+          {...form.register('email')}
+        />
 
-        <FormField
-          name="password"
+        <FormInput
+          label="Password"
+          type="password"
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          required
           error={form.formState.errors.password?.message}
-        >
-          <FormLabel>Password</FormLabel>
-          <div className="relative">
-            <FormInput
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </FormField>
+          {...form.register('password')}
+        />
 
         <Button
           type="submit"

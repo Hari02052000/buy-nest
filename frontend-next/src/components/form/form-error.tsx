@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useId } from 'react';
 import { cn } from '@/lib/cn';
 import { useFormField } from './form-field';
 
@@ -10,7 +10,7 @@ interface FormErrorProps extends React.HTMLAttributes<HTMLParagraphElement> {
 
 function FormError({ className, children, ...props }: FormErrorProps) {
   const { error, fieldId } = useFormField();
-  const errorId = React.useId();
+  const errorId = useId();
   const message = children || error;
 
   if (!message) return null;

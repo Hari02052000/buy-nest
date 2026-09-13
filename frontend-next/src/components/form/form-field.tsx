@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { createContext,useContext,useId } from 'react';
 import { cn } from '@/lib/cn';
 
 interface FormFieldContextValue {
@@ -10,16 +10,20 @@ interface FormFieldContextValue {
   fieldId: string;
 }
 
-const FormFieldContext = React.createContext<FormFieldContextValue>({
+const FormFieldContext = createContext<FormFieldContextValue>({
   fieldId: '',
 });
 
 function useFormField() {
-  const context = React.useContext(FormFieldContext);
+  const context = useContext(FormFieldContext);
   if (!context) {
     throw new Error('Form components must be used within FormField');
   }
   return context;
+}
+
+function useOptionalFormField() {
+  return useContext(FormFieldContext);
 }
 
 interface FormFieldProps {
@@ -31,7 +35,7 @@ interface FormFieldProps {
 }
 
 function FormField({ name, error, description, className, children }: FormFieldProps) {
-  const fieldId = React.useId();
+  const fieldId = useId();
 
   return (
     <FormFieldContext.Provider value={{ name, error, description, fieldId }}>
@@ -42,4 +46,10 @@ function FormField({ name, error, description, className, children }: FormFieldP
   );
 }
 
-export { FormField, useFormField, type FormFieldProps, type FormFieldContextValue };
+export {
+  FormField,
+  useFormField,
+  useOptionalFormField,
+  type FormFieldProps,
+  type FormFieldContextValue,
+};
