@@ -65,6 +65,7 @@ export type FormInputProps<
   label?: string;
   description?: string;
   showPasswordToggle?: boolean;
+  reserveErrorSpace?: boolean;
   containerClassName?: string;
 };
 
@@ -86,6 +87,7 @@ function FormInputInner<
     containerClassName,
     onChange,
     onBlur,
+    reserveErrorSpace,
     ...props
   }: FormInputProps<TFieldValues, TName>,
   ref: ForwardedRef<HTMLInputElement>
@@ -207,16 +209,26 @@ function FormInputInner<
         )}
       </div>
 
-      {hasError && (
-        <p
-          id={errorId}
-          role="alert"
-          aria-live="polite"
-          className="text-sm font-medium text-error-foreground"
-        >
-          {error?.message}
-        </p>
-      )}
+      <div
+        className={cn(
+          "grid transition-all duration-200 ease-out overflow-hidden",
+          hasError ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+          reserveErrorSpace && "min-h-[1.25rem]"
+        )}
+      >
+        <div className="overflow-hidden">
+          {error?.message && (
+            <p
+              id={errorId}
+              role="alert"
+              aria-live="polite"
+              className="text-sm font-medium text-error-foreground pt-0.5"
+            >
+              {error.message}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
