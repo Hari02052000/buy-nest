@@ -1,8 +1,8 @@
-import * as React from "react";
+import { forwardRef, type InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+  extends InputHTMLAttributes<HTMLInputElement> {
   /**
    * Applies error/invalid visual styling to the input.
    * Also automatically triggered if `aria-invalid` is true or "true".
@@ -14,7 +14,7 @@ export interface InputProps
  * Low-level reusable UI primitive rendering a native `<input>`.
  * Feature-agnostic and usable independently of React Hook Form or Zod.
  */
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, type = "text", hasError, disabled, ...props }, ref) => {
     const isInvalid =
       hasError ||

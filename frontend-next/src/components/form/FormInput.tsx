@@ -1,4 +1,12 @@
-import * as React from "react";
+import {
+  forwardRef,
+  useCallback,
+  useId,
+  useState,
+  type ForwardedRef,
+  type ReactElement,
+  type RefObject,
+} from "react";
 import {
   useController,
   type Control,
@@ -80,9 +88,9 @@ function FormInputInner<
     onBlur,
     ...props
   }: FormInputProps<TFieldValues, TName>,
-  ref: React.ForwardedRef<HTMLInputElement>
+  ref: ForwardedRef<HTMLInputElement>
 ) {
-  const [showPassword, setShowPassword] = React.useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     field: {
@@ -99,20 +107,20 @@ function FormInputInner<
     disabled,
   });
 
-  const setComposedRef = React.useCallback(
+  const setComposedRef = useCallback(
     (node: HTMLInputElement | null) => {
       fieldRef(node);
 
       if (typeof ref === "function") {
         ref(node);
       } else if (ref && typeof ref === "object" && "current" in ref) {
-        (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
+        (ref as RefObject<HTMLInputElement | null>).current = node;
       }
     },
     [fieldRef, ref]
   );
 
-  const reactId = React.useId();
+  const reactId = useId();
   const inputId = id || reactId;
   const descriptionId = `${inputId}-description`;
   const errorId = `${inputId}-error`;
@@ -217,11 +225,11 @@ function FormInputInner<
  * Higher-level reusable form control combining Label, Description, Input,
  * React Hook Form integration, Password toggle, and Accessible error messaging.
  */
-export const FormInput = React.forwardRef(FormInputInner) as <
+export const FormInput = forwardRef(FormInputInner) as <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 >(
   props: FormInputProps<TFieldValues, TName> & {
-    ref?: React.ForwardedRef<HTMLInputElement>;
+    ref?: ForwardedRef<HTMLInputElement>;
   }
-) => React.ReactElement;
+) => ReactElement;
