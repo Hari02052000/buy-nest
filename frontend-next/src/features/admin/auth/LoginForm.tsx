@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { FormInput } from "@/components/form/FormInput";
 import { Button } from "@/components/ui/Button";
+import { ShakeProvider, useShakeContext } from "@/components/form/ShakeContext";
 import { loginSchema, type LoginFormData } from "./login.schema";
 import { login, type AuthError } from "./auth.service";
 
@@ -16,8 +17,9 @@ import { login, type AuthError } from "./auth.service";
  * Uses React Hook Form with Zod validation.
  * Communicates with auth.service for authentication.
  */
-export function LoginForm() {
+function LoginFormInner() {
   const router = useRouter();
+  const { requestShakeFirstInvalid } = useShakeContext();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -29,6 +31,8 @@ export function LoginForm() {
 
   const [authError, setAuthError] = useState<string | null>(null);
   const isSubmitting = form.formState.isSubmitting;
+  const isSubmitted = form.formState.isSubmitted;
+  const errors = form.formState.errors;
 
   const onSubmit = async (data: LoginFormData) => {
     setAuthError(null);
@@ -40,8 +44,16 @@ export function LoginForm() {
     } catch (error) {
       const authErr = error as AuthError;
       setAuthError(authErr.message);
+      requestShakeFirstInvalid();
     }
   };
+
+  // Trigger shake on validation failure after submit
+  useEffect(() => {
+    if (isSubmitted && (errors.email || errors.password)) {
+      requestShakeFirstInvalid();
+    }
+  }, [isSubmitted, errors.email, errors.password, requestShakeFirstInvalid]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" noValidate>
@@ -101,5 +113,13 @@ export function LoginForm() {
         Sign in
       </Button>
     </form>
+  );
+}
+
+export function LoginForm() {
+  return (
+    <ShakeProvider>
+      <LoginFormInner />
+    </ShakeProvider>
   );
 }

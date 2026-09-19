@@ -1,7 +1,9 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useId,
+  useRef,
   useState,
   type ForwardedRef,
   type ReactElement,
@@ -15,6 +17,7 @@ import {
 } from "react-hook-form";
 import { Input, type InputProps } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
+import { useShakeContext } from "./ShakeContext";
 
 function EyeIcon({ className }: { className?: string }) {
   return (
@@ -67,6 +70,7 @@ export type FormInputProps<
   showPasswordToggle?: boolean;
   reserveErrorSpace?: boolean;
   containerClassName?: string;
+  enableShake?: boolean;
 };
 
 function FormInputInner<
@@ -88,11 +92,16 @@ function FormInputInner<
     onChange,
     onBlur,
     reserveErrorSpace,
+    enableShake = true,
     ...props
   }: FormInputProps<TFieldValues, TName>,
   ref: ForwardedRef<HTMLInputElement>
 ) {
   const [showPassword, setShowPassword] = useState(false);
+  const shakeContext = useShakeContext();
+  const [shouldShake, setShouldShake] = useState(false);
+  const hadErrorRef = useRef(false);
+  const prefersReducedMotionRef = useRef(false);
 
   const {
     field: {
@@ -122,15 +131,60 @@ function FormInputInner<
     [fieldRef, ref]
   );
 
+  const triggerShake = useCallback(() => {
+    if (enableShake && !prefersReducedMotionRef.current) {
+      setShouldShake(true);
+      setTimeout(() => setShouldShake(false), 200);
+    }
+  }, [enableShake]);
+
+  useEffect(() => {
+    prefersReducedMotionRef.current = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+  }, []);
+
+  const hasError = Boolean(error);
+
+  useEffect(() => {
+    if (shakeContext) {
+      shakeContext.registerField(name, hasError, enableShake, triggerShake);
+      return () => shakeContext.unregisterField(name);
+    }
+  }, [name, hasError, enableShake, triggerShake, shakeContext]);
+
+  const isPasswordField = type === "password";
+  const hasToggle = isPasswordField && showPasswordToggle;
+  const resolvedType = hasToggle ? (showPassword ? "text" : "password") : type;
+
+  useEffect(() => {
+    if (hasError && !hadErrorRef.current && enableShake) {
+      hadErrorRef.current = true;
+      let isFirstError = true;
+
+      if (shakeContext) {
+        // Check if this is the first error field in DOM order
+        // We can't easily check from here without exposing field list,
+        // so we'll rely on the context's requestShakeFirstInvalid for submit
+        // For blur, we shake if this field has error and no other field before it has error
+        // Since we don't have access to other fields' state here, we'll skip blur shake
+        // and only use submit-triggered shake which is more reliable
+        isFirstError = false; // Disable blur shake to avoid double-shake complexity
+      }
+
+      if (isFirstError && !prefersReducedMotionRef.current) {
+        setShouldShake(true);
+        setTimeout(() => setShouldShake(false), 200);
+      }
+    } else if (!hasError) {
+      hadErrorRef.current = false;
+    }
+  }, [hasError, enableShake, shakeContext]);
+
   const reactId = useId();
   const inputId = id || reactId;
   const descriptionId = `${inputId}-description`;
   const errorId = `${inputId}-error`;
-
-  const hasError = Boolean(error);
-  const isPasswordField = type === "password";
-  const hasToggle = isPasswordField && showPasswordToggle;
-  const resolvedType = hasToggle ? (showPassword ? "text" : "password") : type;
 
   const ariaDescribedBy =
     [
@@ -168,7 +222,7 @@ function FormInputInner<
         </p>
       )}
 
-      <div className="relative w-full">
+      <div className={cn("relative w-full", shouldShake && "shake")}>
         <Input
           {...props}
           id={inputId}
