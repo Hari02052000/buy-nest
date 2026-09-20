@@ -7,7 +7,6 @@ export interface AdminProps {
   password: string | undefined;
   profile: string;
   salt: string | undefined;
-  refresh_token: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,7 +19,7 @@ export interface CreateAdminInput {
   profile?: string;
 }
 
-export type SanitizedAdmin = Omit<AdminProps, "password" | "salt" | "refresh_token">;
+export type SanitizedAdmin = Omit<AdminProps, "password" | "salt">;
 
 export class Admin {
   constructor(private props: AdminProps) {
@@ -35,7 +34,6 @@ export class Admin {
       password: data.password,
       salt: data.salt,
       profile: data.profile ?? "",
-      refresh_token: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -49,7 +47,6 @@ export class Admin {
       password: doc.password,
       profile: doc.profile || "",
       salt: doc.salt,
-      refresh_token: doc.refresh_token || "",
       createdAt: doc.createdAt?.toISOString?.() || new Date().toISOString(),
       updatedAt: doc.updatedAt?.toISOString?.() || new Date().toISOString(),
     });
@@ -61,12 +58,11 @@ export class Admin {
   get password(): string | undefined { return this.props.password; }
   get salt(): string | undefined { return this.props.salt; }
   get profile(): string { return this.props.profile; }
-  get refresh_token(): string { return this.props.refresh_token; }
   get createdAt(): string { return this.props.createdAt; }
   get updatedAt(): string { return this.props.updatedAt; }
 
   sanitize(): SanitizedAdmin {
-    const { password, salt, refresh_token, ...safe } = this.props;
+    const { password, salt, ...safe } = this.props;
     return safe;
   }
 
@@ -81,7 +77,6 @@ export interface AdminDocument extends Document {
   password?: string;
   profile?: string;
   salt?: string;
-  refresh_token?: string;
   createdAt: Date;
   updatedAt: Date;
 }

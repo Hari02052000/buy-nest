@@ -4,13 +4,13 @@ import { container } from "tsyringe";
 import { AUTH_TOKENS } from "./auth.tokens";
 import { AuthController } from "./auth.controller";
 import { authenticateUser, authenticateAdmin } from "@/shared/middleware/auth.middleware";
+import { authLimiter } from "@/shared/middleware/rate-limiter";
 
 const router = Router();
 const controller = container.resolve<AuthController>(AUTH_TOKENS.Controller);
 
-router.post("/register", controller.userRegister);
-router.post("/login", controller.userLogin);
-router.post("/refresh-token", controller.userRefreshToken);
+router.post("/login", authLimiter, controller.userLogin);
+router.post("/admin/login", authLimiter, controller.adminLogin);
 
 router.get("/google-login", passport.authenticate("google", { scope: ["profile", "email"] }));
 
@@ -20,10 +20,10 @@ router.get(
   controller.googleLoginSuccess,
 );
 
-router.post("/admin/login", controller.adminLogin);
-router.post("/admin/refresh-token", controller.adminRefreshToken);
+router.get("/me", authenticateUser, controller.userMe);
+router.get("/admin/me", authenticateAdmin, controller.adminMe);
 
-router.post("/logout", authenticateUser, controller.logoutUser);
-router.post("/admin/logout", authenticateAdmin, controller.logoutAdmin);
+router.post("/logout", authenticateUser, controller.userLogout);
+router.post("/admin/logout", authenticateAdmin, controller.adminLogout);
 
 export default router;

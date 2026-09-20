@@ -15,7 +15,6 @@ const adminSchema = new Schema<AdminDocument>(
     password: { type: String, minlength: 6, required: true },
     profile: String,
     salt: { type: String, unique: true, required: true },
-    refresh_token: { type: String, unique: true },
   },
   { timestamps: true },
 );

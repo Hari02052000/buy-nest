@@ -14,7 +14,6 @@ export class UserRepository {
         salt: user.salt,
         isEmailVerified: user.isEmailVerified,
         profile: user.profile,
-        refresh_token: user.refresh_token,
         isGoogleProvided: user.isGoogleProvided,
         googleId: user.googleId,
         otp: user.otp,

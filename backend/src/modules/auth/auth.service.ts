@@ -1,40 +1,36 @@
 import { injectable, inject } from "tsyringe";
 import type { UserRepository } from "@/modules/user/user.repository";
-import { User } from "@/modules/user/user.entity";
 import type { AdminRepository } from "@/modules/admin/admin.repository";
+import { User } from "@/modules/user/user.entity";
 import { USER_TOKENS } from "@/modules/user/user.tokens";
 import { ADMIN_TOKENS } from "@/modules/admin/admin.tokens";
 import { SHARED_TOKENS } from "@/shared/tokens";
 import type { AuthUtils } from "@/shared/utils/auth.utils";
-import { ValidationError, APIError } from "@/shared/errors";
+import { ValidationError } from "@/shared/errors";
+import { SESSION_TOKENS } from "./session.tokens";
+import type { SessionRepository } from "./session.repository";
 
-export interface UserAuthTokens {
-  access_token: string;
-  refresh_token: string;
+export interface UserSessionResult {
   user: {
     id: string;
-    userName: string;
+    name: string;
     email: string;
-    isEmailVerified: boolean;
-    profile: string;
-    isGoogleProvided: boolean;
-    createdAt: string;
-    updatedAt: string;
+    role?: string;
   };
+  sessionId: string;
 }
 
-export interface AdminAuthTokens {
-  access_token: string;
-  refresh_token: string;
+export interface AdminSessionResult {
   admin: {
     id: string;
-    userName: string;
+    name: string;
     email: string;
     role: string;
-    createdAt: string;
-    updatedAt: string;
   };
+  sessionId: string;
 }
+
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 @injectable()
 export class AuthService {
@@ -42,53 +38,54 @@ export class AuthService {
     @inject(USER_TOKENS.Repository) private userRepo: UserRepository,
     @inject(ADMIN_TOKENS.Repository) private adminRepo: AdminRepository,
     @inject(SHARED_TOKENS.AuthUtils) private authUtils: AuthUtils,
+    @inject(SESSION_TOKENS.Repository) private sessionRepo: SessionRepository,
   ) {}
 
-  async register(email: string, password: string): Promise<UserAuthTokens> {
-    const existing = await this.userRepo.findByEmail(email);
-    if (existing) throw new ValidationError("Email already exists");
-
-    const salt = await this.authUtils.getSalt();
-    const hashedPassword = await this.authUtils.getHashedPassword(password, salt);
-    const user = User.create({ email, password: hashedPassword, salt });
-    const savedUser = await this.userRepo.save(user);
-
-    const access_token = this.authUtils.generateAccessToken(savedUser.email, savedUser.id);
-    const refresh_token = this.authUtils.generateRefreshToken(savedUser.id);
-    await this.userRepo.update(savedUser.id, { refresh_token });
-
-    return { access_token, refresh_token, user: savedUser.sanitize() };
-  }
-
-  async login(email: string, password: string): Promise<UserAuthTokens> {
-    const user = await this.userRepo.findByEmail(email);
-    if (!user) throw new ValidationError("Invalid email or password");
+  async login(email: string, password: string): Promise<UserSessionResult> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.userRepo.findByEmail(normalizedEmail);
+    if (!user) throw new ValidationError("Invalid email or password.");
     if (user.isGoogleProvided && user.googleId) {
       throw new ValidationError("Account registered via Google. Use Google login.");
     }
 
     const isValid = await this.authUtils.validatePassword(password, user.password || "");
-    if (!isValid) throw new ValidationError("Invalid email or password");
+    if (!isValid) throw new ValidationError("Invalid email or password.");
 
-    const access_token = this.authUtils.generateAccessToken(user.email, user.id);
-    const refresh_token = this.authUtils.generateRefreshToken(user.id);
-    await this.userRepo.update(user.id, { refresh_token });
+    const sessionId = await this.createSession(user.id, "user");
 
-    return { access_token, refresh_token, user: user.sanitize() };
+    return {
+      user: {
+        id: user.id,
+        name: user.userName,
+        email: user.email,
+      },
+      sessionId,
+    };
   }
 
-  async refreshToken(userId: string): Promise<UserAuthTokens> {
-    const user = await this.userRepo.findById(userId);
-    if (!user) throw new ValidationError("User not found");
+  async adminLogin(email: string, password: string): Promise<AdminSessionResult> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const admin = await this.adminRepo.findByEmail(normalizedEmail);
+    if (!admin) throw new ValidationError("Invalid email or password.");
 
-    const access_token = this.authUtils.generateAccessToken(user.email, user.id);
-    const refresh_token = this.authUtils.generateRefreshToken(user.id);
-    await this.userRepo.update(user.id, { refresh_token });
+    const isValid = await this.authUtils.validatePassword(password, admin.password || "");
+    if (!isValid) throw new ValidationError("Invalid email or password.");
 
-    return { access_token, refresh_token, user: user.sanitize() };
+    const sessionId = await this.createSession(admin.id, "admin");
+
+    return {
+      admin: {
+        id: admin.id,
+        name: admin.userName,
+        email: admin.email,
+        role: "ADMIN",
+      },
+      sessionId,
+    };
   }
 
-  async loginViaGoogle(email: string, googleId: string, name: string, profile: string) {
+  async loginViaGoogle(email: string, googleId: string, name: string, profile: string): Promise<User> {
     let user = await this.userRepo.findByEmail(email);
     if (!user) {
       user = User.create({ email, password: "", salt: "", userName: name, isGoogleProvided: true, googleId, profile });
@@ -96,52 +93,70 @@ export class AuthService {
     } else {
       user = await this.userRepo.update(user.id, { googleId, profile, isGoogleProvided: true }) || user;
     }
+    return user;
+  }
+
+  async googleSuccess(passportUserId: string): Promise<UserSessionResult> {
+    const user = await this.userRepo.findById(passportUserId);
+    if (!user) throw new ValidationError("User not found");
+
+    const sessionId = await this.createSession(user.id, "user");
+
+    return {
+      user: {
+        id: user.id,
+        name: user.userName,
+        email: user.email,
+      },
+      sessionId,
+    };
+  }
+
+  async getUserById(id: string) {
+    const user = await this.userRepo.findById(id);
+    if (!user) throw new ValidationError("User not found");
     return user.sanitize();
   }
 
-  async googleSuccess(userId: string): Promise<UserAuthTokens> {
-    const user = await this.userRepo.findById(userId);
-    if (!user) throw new ValidationError("User not found");
-
-    const access_token = this.authUtils.generateAccessToken(user.email, user.id);
-    const refresh_token = this.authUtils.generateRefreshToken(user.id);
-    await this.userRepo.update(user.id, { refresh_token });
-
-    return { access_token, refresh_token, user: user.sanitize() };
-  }
-
-  async adminLogin(email: string, password: string): Promise<AdminAuthTokens> {
-    const admin = await this.adminRepo.findByEmail(email);
-    if (!admin) throw new ValidationError("Invalid email or password");
-
-    const isValid = await this.authUtils.validatePassword(password, admin.password || "");
-    if (!isValid) throw new ValidationError("Invalid email or password");
-
-    const access_token = this.authUtils.generateAccessToken(admin.email, admin.id);
-    const refresh_token = this.authUtils.generateRefreshToken(admin.id);
-    await this.adminRepo.update(admin.id, { refresh_token } as any);
-
-    return { access_token, refresh_token, admin: admin.sanitize() as any };
-  }
-
-  async adminRefreshToken(userId: string): Promise<AdminAuthTokens> {
-    const admin = await this.adminRepo.findById(userId);
+  async getAdminById(id: string) {
+    const admin = await this.adminRepo.findById(id);
     if (!admin) throw new ValidationError("Admin not found");
-
-    const access_token = this.authUtils.generateAccessToken(admin.email, admin.id);
-    const refresh_token = this.authUtils.generateRefreshToken(admin.id);
-    await this.adminRepo.update(admin.id, { refresh_token } as any);
-
-    return { access_token, refresh_token, admin: admin.sanitize() as any };
+    return admin.sanitize() as any;
   }
 
-  async logoutUser(userId: string): Promise<boolean> {
-    await this.userRepo.update(userId, { refresh_token: "" });
+  async getSession(sessionId: string): Promise<{ sessionId: string; userId: string; userType: "user" | "admin"; expiresAt: string; lastUsedAt: string; createdAt: string; updatedAt: string } | null> {
+    const session = await this.sessionRepo.findBySessionId(sessionId);
+    if (!session) return null;
+    if (new Date(session.expiresAt) <= new Date()) {
+      await this.sessionRepo.delete(sessionId);
+      return null;
+    }
+    return session;
+  }
+
+  async logout(sessionId: string): Promise<boolean> {
+    await this.sessionRepo.delete(sessionId);
     return true;
   }
 
-  async logoutAdmin(userId: string): Promise<boolean> {
-    await this.adminRepo.update(userId, { refresh_token: "" } as any);
+  async logoutByUserId(userId: string): Promise<boolean> {
+    await this.sessionRepo.deleteByUserId(userId);
     return true;
+  }
+
+  private async createSession(userId: string, userType: "user" | "admin"): Promise<string> {
+    const sessionId = this.authUtils.generateSessionId();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + SESSION_DURATION_MS);
+
+    await this.sessionRepo.create({
+      sessionId,
+      userId,
+      userType,
+      expiresAt: expiresAt.toISOString(),
+      lastUsedAt: now.toISOString(),
+    });
+
+    return sessionId;
   }
 }

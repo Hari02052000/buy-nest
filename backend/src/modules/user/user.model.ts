@@ -16,7 +16,6 @@ const userSchema = new Schema<UserDocument>(
     isEmailVerified: { type: Boolean, default: false },
     profile: String,
     salt: String,
-    refresh_token: String,
     isGoogleProvided: { type: Boolean, default: false },
     googleId: String,
     otp: Number,

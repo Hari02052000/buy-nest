@@ -15,7 +15,7 @@ if (env.google_client_id && env.google_client_secret && env.google_callback_url)
         clientSecret: env.google_client_secret,
         callbackURL: env.google_callback_url,
       },
-      async (_accessToken, _refreshToken, profile, done) => {
+      async (_accessToken: any, _refreshToken: any, profile, done) => {
         try {
           if (!profile.emails || profile.emails.length === 0) {
             done(new Error("Google account has no email"), undefined);

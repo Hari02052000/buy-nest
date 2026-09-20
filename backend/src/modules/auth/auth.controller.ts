@@ -1,62 +1,25 @@
 import { injectable, inject } from "tsyringe";
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
 import { AuthService } from "./auth.service";
 import { AUTH_TOKENS } from "./auth.tokens";
+import { SESSION_TOKENS } from "./session.tokens";
 import { ResponseUtils } from "@/shared/utils/response.utils";
 import { ValidationError } from "@/shared/errors";
-import { env } from "@/shared/config/environment";
-
-const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+import { SessionRepository } from "./session.repository";
 
 @injectable()
 export class AuthController {
   constructor(
     @inject(AUTH_TOKENS.Service) private authService: AuthService,
+    @inject(SESSION_TOKENS.Repository) private sessionRepo: SessionRepository,
   ) {}
-
-  userRegister = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { email, password } = req.body;
-      const result = await this.authService.register(email, password);
-
-      this.setUserCookies(res, result.access_token, result.refresh_token);
-      this.clearAdminCookies(res);
-
-      res.status(201).json(ResponseUtils.success({ user: result.user }, "Registration successful"));
-    } catch (error) {
-      next(error);
-    }
-  };
 
   userLogin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body;
       const result = await this.authService.login(email, password);
-
-      this.setUserCookies(res, result.access_token, result.refresh_token);
-      this.clearAdminCookies(res);
-
+      this.setSessionCookie(res, result.sessionId);
       res.status(200).json(ResponseUtils.success({ user: result.user }, "Login successful"));
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  userRefreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const refreshToken = req.cookies.refresh_token;
-      if (!refreshToken) throw new ValidationError("Refresh token required");
-
-      const payload = jwt.verify(refreshToken, env.APP_SECRET) as { id: string; type?: string };
-      if (payload.type !== "refresh") throw new ValidationError("Invalid token type");
-
-      const result = await this.authService.refreshToken(payload.id);
-
-      this.setUserCookies(res, result.access_token, result.refresh_token);
-      this.clearAdminCookies(res);
-
-      res.status(200).json(ResponseUtils.success({ user: result.user }));
     } catch (error) {
       next(error);
     }
@@ -66,30 +29,60 @@ export class AuthController {
     try {
       const { email, password } = req.body;
       const result = await this.authService.adminLogin(email, password);
-
-      this.setAdminCookies(res, result.access_token, result.refresh_token);
-      this.clearUserCookies(res);
-
+      this.setSessionCookie(res, result.sessionId);
       res.status(200).json(ResponseUtils.success({ admin: result.admin }, "Admin login successful"));
     } catch (error) {
       next(error);
     }
   };
 
-  adminRefreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  userMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const refreshToken = req.cookies.refresh_token_admin;
-      if (!refreshToken) throw new ValidationError("Admin refresh token required");
+      const sessionId = req.cookies.session_id;
+      if (!sessionId) throw new ValidationError("No session");
+      const session = await this.authService.getSession(sessionId);
+      if (!session) throw new ValidationError("Session expired or invalid");
+      const user = await this.authService.getUserById(session.userId);
+      res.status(200).json(ResponseUtils.success({ user }));
+    } catch (error) {
+      next(error);
+    }
+  };
 
-      const payload = jwt.verify(refreshToken, env.APP_SECRET) as { id: string; type?: string };
-      if (payload.type !== "refresh") throw new ValidationError("Invalid token type");
+  adminMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const sessionId = req.cookies.session_id;
+      if (!sessionId) throw new ValidationError("No session");
+      const session = await this.authService.getSession(sessionId);
+      if (!session) throw new ValidationError("Session expired or invalid");
+      const admin = await this.authService.getAdminById(session.userId);
+      res.status(200).json(ResponseUtils.success({ admin }));
+    } catch (error) {
+      next(error);
+    }
+  };
 
-      const result = await this.authService.adminRefreshToken(payload.id);
+  userLogout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const sessionId = req.cookies.session_id;
+      if (sessionId) {
+        await this.authService.logout(sessionId);
+      }
+      this.clearSessionCookie(res);
+      res.status(200).json(ResponseUtils.success({ isLogout: true }, "Logout successful"));
+    } catch (error) {
+      next(error);
+    }
+  };
 
-      this.setAdminCookies(res, result.access_token, result.refresh_token);
-      this.clearUserCookies(res);
-
-      res.status(200).json(ResponseUtils.success({ admin: result.admin }));
+  adminLogout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const sessionId = req.cookies.session_id;
+      if (sessionId) {
+        await this.authService.logout(sessionId);
+      }
+      this.clearSessionCookie(res);
+      res.status(200).json(ResponseUtils.success({ isLogout: true }, "Admin logout successful"));
     } catch (error) {
       next(error);
     }
@@ -99,63 +92,31 @@ export class AuthController {
     try {
       const passportUser = req.user as any;
       if (!passportUser?.id) throw new ValidationError("Google login failed");
-
       const result = await this.authService.googleSuccess(passportUser.id);
-
-      this.setUserCookies(res, result.access_token, result.refresh_token);
-      this.clearAdminCookies(res);
-
-      res.redirect(env.frontend_url_home);
+      this.setSessionCookie(res, result.sessionId);
+      res.redirect(process.env.frontend_url_home || "http://localhost:5174");
     } catch (error) {
       next(error);
     }
   };
 
-  logoutUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) throw new ValidationError("User not authenticated");
-
-      await this.authService.logoutUser(userId);
-      this.clearUserCookies(res);
-
-      res.status(200).json(ResponseUtils.success({ isLogout: true }, "Logout successful"));
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  logoutAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) throw new ValidationError("Admin not authenticated");
-
-      await this.authService.logoutAdmin(userId);
-      this.clearAdminCookies(res);
-
-      res.status(200).json(ResponseUtils.success({ isLogout: true }, "Admin logout successful"));
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  private setUserCookies(res: Response, accessToken: string, refreshToken: string): void {
-    res.cookie("access_token", accessToken, { httpOnly: true, maxAge: COOKIE_MAX_AGE });
-    res.cookie("refresh_token", refreshToken, { httpOnly: true, maxAge: COOKIE_MAX_AGE });
+  private setSessionCookie(res: Response, sessionId: string): void {
+    res.cookie("session_id", sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
   }
 
-  private setAdminCookies(res: Response, accessToken: string, refreshToken: string): void {
-    res.cookie("access_token_admin", accessToken, { httpOnly: true, maxAge: COOKIE_MAX_AGE });
-    res.cookie("refresh_token_admin", refreshToken, { httpOnly: true, maxAge: COOKIE_MAX_AGE });
-  }
-
-  private clearUserCookies(res: Response): void {
-    res.cookie("access_token", "", { httpOnly: true, expires: new Date(0) });
-    res.cookie("refresh_token", "", { httpOnly: true, expires: new Date(0) });
-  }
-
-  private clearAdminCookies(res: Response): void {
-    res.cookie("access_token_admin", "", { httpOnly: true, expires: new Date(0) });
-    res.cookie("refresh_token_admin", "", { httpOnly: true, expires: new Date(0) });
+  private clearSessionCookie(res: Response): void {
+    res.cookie("session_id", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      expires: new Date(0),
+    });
   }
 }

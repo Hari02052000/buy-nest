@@ -16,26 +16,27 @@ import logger from "@/shared/config/logger";
 export function createServer(): express.Express {
   const app = express();
 
-  // Security
-  app.use(helmet());
-  app.use(cors({
-    origin: [env.frontend_url, "http://localhost:3000", "http://localhost:5173", "http://localhost:5174"],
-    credentials: true,
-  }));
+  const allowedOrigins = (env.frontend_origins || env.frontend_url || "http://localhost:5174")
+    .split(",")
+    .map((o) => o.trim());
 
-  // Compression
+  app.use(helmet());
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+    }),
+  );
+
   app.use(compression());
 
-  // Body parsing with size limits
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true, limit: "1mb" }));
   app.use(cookieParser());
 
-  // Request ID + logging
   app.use(requestId);
   app.use(requestLogger);
 
-  // Global rate limit
   app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -44,7 +45,6 @@ export function createServer(): express.Express {
     message: { success: false, message: "Too many requests, please try again later" },
   }));
 
-  // Health check
   app.get("/api/health", (_req, res) => {
     res.status(200).json({
       success: true,
@@ -54,10 +54,8 @@ export function createServer(): express.Express {
     });
   });
 
-  // API v1 routes
   app.use("/api/v1", v1Router);
 
-  // Error handler
   app.use(handleError);
 
   logger.info("Server configured");

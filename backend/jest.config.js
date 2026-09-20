@@ -1,10 +1,10 @@
 /** @type {import('jest').Config} */
-export default {
+module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
   testMatch: ["<rootDir>/__tests__/**/*.test.ts"],
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@/(.*)": "<rootDir>/src/$1",
   },
   modulePathIgnorePatterns: ["<rootDir>/dist/"],
   transform: {

@@ -8,7 +8,6 @@ export interface UserProps {
   password: string | undefined;
   profile: string;
   salt: string | undefined;
-  refresh_token: string;
   isGoogleProvided: boolean;
   googleId: string;
   otp: number;
@@ -27,7 +26,7 @@ export interface CreateUserInput {
   profile?: string;
 }
 
-export type SanitizedUser = Omit<UserProps, "password" | "salt" | "refresh_token" | "googleId" | "otp" | "otpExp">;
+export type SanitizedUser = Omit<UserProps, "password" | "salt" | "googleId" | "otp" | "otpExp">;
 
 export class User {
   constructor(private props: UserProps) {
@@ -43,7 +42,6 @@ export class User {
       salt: data.salt,
       isEmailVerified: false,
       profile: data.profile ?? "",
-      refresh_token: "",
       isGoogleProvided: data.isGoogleProvided ?? false,
       googleId: data.googleId ?? "",
       otp: 0,
@@ -62,7 +60,6 @@ export class User {
       password: doc.password,
       profile: doc.profile || "",
       salt: doc.salt,
-      refresh_token: doc.refresh_token || "",
       isGoogleProvided: doc.isGoogleProvided,
       googleId: doc.googleId || "",
       otp: doc.otp || 0,
@@ -81,14 +78,13 @@ export class User {
   get isEmailVerified(): boolean { return this.props.isEmailVerified; }
   get isGoogleProvided(): boolean { return this.props.isGoogleProvided; }
   get googleId(): string { return this.props.googleId; }
-  get refresh_token(): string { return this.props.refresh_token; }
   get otp(): number { return this.props.otp; }
   get otpExp(): string { return this.props.otpExp; }
   get createdAt(): string { return this.props.createdAt; }
   get updatedAt(): string { return this.props.updatedAt; }
 
   sanitize(): SanitizedUser {
-    const { password, salt, refresh_token, googleId, otp, otpExp, ...safe } = this.props;
+    const { password, salt, googleId, otp, otpExp, ...safe } = this.props;
     return safe;
   }
 
@@ -104,7 +100,6 @@ export interface UserDocument extends Document {
   password?: string;
   profile?: string;
   salt?: string;
-  refresh_token?: string;
   isGoogleProvided: boolean;
   googleId?: string;
   otp?: number;

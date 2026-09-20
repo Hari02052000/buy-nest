@@ -1,15 +1,12 @@
+export {};
+
 declare global {
   namespace Express {
     interface User {
       id: string;
-      userName: string;
       email: string;
-      isEmailVerified: boolean;
-      profile: string;
-      createdAt: string;
-      updatedAt: string;
+      name: string;
+      role?: string;
     }
   }
 }
-
-export {};

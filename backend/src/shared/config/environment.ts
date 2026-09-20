@@ -16,7 +16,6 @@ export const env = {
   PORT: parseInt(process.env.PORT || "5000", 10),
 
   DB_URL: requireEnv("DB_URL"),
-  APP_SECRET: requireEnv("APP_SECRET"),
 
   cloud_name: process.env.cloudinary_cloud_name || "",
   api_key: process.env.cloudinary_api_key || "",
@@ -33,4 +32,5 @@ export const env = {
 
   frontend_url: process.env.frontend_url || "http://localhost:5174",
   frontend_url_home: process.env.frontend_url_home || "http://localhost:5174",
+  frontend_origins: process.env.frontend_origins || "",
 } as const;

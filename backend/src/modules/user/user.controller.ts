@@ -32,8 +32,7 @@ export class UserController {
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await this.userService.logout(req.user!.id);
-      res.clearCookie("access_token");
-      res.clearCookie("refresh_token");
+      res.clearCookie("session_id");
       res.json(ResponseUtils.success({ isLogout: true }));
     } catch (error) {
       next(error);

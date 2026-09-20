@@ -1,27 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import UserModel from "@/modules/user/user.model";
 import AdminModel from "@/modules/admin/admin.model";
-import { env } from "../config/environment";
-
-export interface JwtUserPayload {
-  id: string;
-  userName?: string;
-  email?: string;
-  role?: string;
-  type?: "access" | "refresh";
-  isEmailVerified?: boolean;
-  profile?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-function extractToken(req: Request): string | null {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.substring(7);
-  }
-  return req.cookies.access_token || null;
-}
+import { SESSION_TOKENS } from "@/modules/auth/session.tokens";
+import { container } from "tsyringe";
+import { SessionRepository } from "@/modules/auth/session.repository";
 
 export const authenticateUser = async (
   req: Request,
@@ -29,41 +11,39 @@ export const authenticateUser = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const token = extractToken(req);
-
-    if (!token) {
-      res.status(401).json({ success: false, message: "Access token is required" });
+    const sessionId = req.cookies.session_id || null;
+    if (!sessionId) {
+      res.status(401).json({ success: false, message: "Authentication required" });
       return;
     }
 
-    const payload = jwt.verify(token, env.APP_SECRET) as JwtUserPayload;
+    const sessionRepo = container.resolve<SessionRepository>(SESSION_TOKENS.Repository);
+    const session = await sessionRepo.findBySessionId(sessionId);
+    if (!session || new Date(session.expiresAt) <= new Date()) {
+      res.status(401).json({ success: false, message: "Session expired" });
+      return;
+    }
 
-    if (!payload.id || payload.type === "refresh") {
-      res.status(401).json({ success: false, message: "Invalid token payload" });
+    if (session.userType !== "user") {
+      res.status(401).json({ success: false, message: "Authentication required" });
+      return;
+    }
+
+    const user = await UserModel.findById(session.userId);
+    if (!user) {
+      res.status(401).json({ success: false, message: "User not found" });
       return;
     }
 
     req.user = {
-      id: payload.id,
-      userName: payload.userName || "",
-      email: payload.email || "",
-      isEmailVerified: payload.isEmailVerified ?? false,
-      profile: payload.profile || "",
-      createdAt: payload.createdAt || "",
-      updatedAt: payload.updatedAt || "",
+      id: user._id.toString(),
+      email: user.email,
+      name: user.userName,
     };
 
     next();
-  } catch (error) {
-    if (error instanceof TokenExpiredError) {
-      res.status(401).json({ success: false, message: "Token expired" });
-      return;
-    }
-    if (error instanceof JsonWebTokenError) {
-      res.status(401).json({ success: false, message: "Invalid token" });
-      return;
-    }
-    res.status(401).json({ success: false, message: "Authentication failed" });
+  } catch {
+    res.status(401).json({ success: false, message: "Authentication required" });
   }
 };
 
@@ -73,51 +53,39 @@ export const authenticateAdmin = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-    const token =
-      authHeader && authHeader.startsWith("Bearer ")
-        ? authHeader.substring(7)
-        : req.cookies.access_token_admin;
-
-    if (!token) {
-      res.status(401).json({ success: false, message: "Admin access token is required" });
+    const sessionId = req.cookies.session_id || null;
+    if (!sessionId) {
+      res.status(401).json({ success: false, message: "Authentication required" });
       return;
     }
 
-    const payload = jwt.verify(token, env.APP_SECRET) as JwtUserPayload;
-
-    if (!payload.id || payload.type === "refresh") {
-      res.status(401).json({ success: false, message: "Invalid admin token payload" });
+    const sessionRepo = container.resolve<SessionRepository>(SESSION_TOKENS.Repository);
+    const session = await sessionRepo.findBySessionId(sessionId);
+    if (!session || new Date(session.expiresAt) <= new Date()) {
+      res.status(401).json({ success: false, message: "Session expired" });
       return;
     }
 
-    // Verify the token belongs to an actual admin in the database
-    const admin = await AdminModel.findById(payload.id);
+    if (session.userType !== "admin") {
+      res.status(403).json({ success: false, message: "Admin access required" });
+      return;
+    }
+
+    const admin = await AdminModel.findById(session.userId);
     if (!admin) {
       res.status(401).json({ success: false, message: "Admin not found" });
       return;
     }
 
     req.user = {
-      id: payload.id,
-      userName: admin.userName || "",
-      email: admin.email || "",
-      isEmailVerified: true,
-      profile: "",
-      createdAt: admin.createdAt?.toISOString?.() || "",
-      updatedAt: admin.updatedAt?.toISOString?.() || "",
+      id: admin._id.toString(),
+      email: admin.email,
+      name: admin.userName,
+      role: "ADMIN",
     };
 
     next();
   } catch (error) {
-    if (error instanceof TokenExpiredError) {
-      res.status(401).json({ success: false, message: "Admin token expired" });
-      return;
-    }
-    if (error instanceof JsonWebTokenError) {
-      res.status(401).json({ success: false, message: "Invalid admin token" });
-      return;
-    }
-    res.status(401).json({ success: false, message: "Admin authentication failed" });
+    res.status(401).json({ success: false, message: (error as Error).message });
   }
 };
