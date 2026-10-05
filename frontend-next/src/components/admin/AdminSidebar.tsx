@@ -19,23 +19,11 @@ export function AdminSidebar({ isOpen, onClose, isMobile }: AdminSidebarProps) {
   useEffect(() => {
     if (isOpen) {
       previousActiveElement.current = document.activeElement as HTMLElement;
-      if (isMobile) {
-        document.body.style.overflow = "hidden";
-      }
       sidebarRef.current?.focus();
     } else {
-      if (isMobile) {
-        document.body.style.overflow = "";
-      }
       previousActiveElement.current?.focus();
     }
-
-    return () => {
-      if (isMobile) {
-        document.body.style.overflow = "";
-      }
-    };
-  }, [isOpen, isMobile]);
+  }, [isOpen]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -48,6 +36,8 @@ export function AdminSidebar({ isOpen, onClose, isMobile }: AdminSidebarProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
+  // On mobile: render nothing when closed (drawer behavior)
+  // On desktop: always render (collapsible behavior)
   if (!isOpen && isMobile) {
     return null;
   }
@@ -56,7 +46,7 @@ export function AdminSidebar({ isOpen, onClose, isMobile }: AdminSidebarProps) {
     <>
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           aria-hidden="true"
           onClick={onClose}
         />
@@ -82,12 +72,14 @@ export function AdminSidebar({ isOpen, onClose, isMobile }: AdminSidebarProps) {
             <span className="font-bold text-lg text-foreground hidden sm:block">Buy Nest</span>
           </Link>
 
-          {isMobile && (
+          {/* Close button - only on mobile when sidebar is open */}
+          {isMobile && isOpen && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              aria-label="Close sidebar"
+              aria-label="Close menu"
+              className="lg:hidden"
             >
               <XIcon className="h-5 w-5" />
             </Button>
@@ -95,14 +87,6 @@ export function AdminSidebar({ isOpen, onClose, isMobile }: AdminSidebarProps) {
         </div>
 
         <AdminSidebarNav />
-
-        {isMobile && (
-          <div className="p-4 border-t border-border">
-            <Button variant="secondary" className="w-full" onClick={onClose}>
-              Close Menu
-            </Button>
-          </div>
-        )}
       </aside>
     </>
   );
@@ -121,10 +105,10 @@ export function AdminSidebarTrigger({
       size="md"
       className="p-2"
       onClick={onClick}
-      aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+      aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
       aria-expanded={isSidebarOpen}
     >
-      <MenuIcon className="h-6 w-6" />
+      {isSidebarOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
     </Button>
   );
 }

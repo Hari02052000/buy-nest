@@ -4,14 +4,16 @@ import { AdminSidebarTrigger } from "./AdminSidebar";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
 import { cn } from "@/lib/utils";
+import type { CurrentUser } from "@/types/user";
 
 interface AdminTopbarProps {
   onMenuClick: () => void;
   isSidebarOpen: boolean;
   isMobile: boolean;
+  user: CurrentUser;
 }
 
-export function AdminTopbar({ onMenuClick, isSidebarOpen, isMobile }: AdminTopbarProps) {
+export function AdminTopbar({ onMenuClick, isSidebarOpen, isMobile, user }: AdminTopbarProps) {
   const headerMargin = isSidebarOpen && !isMobile ? "lg:ml-64" : "";
 
   return (
@@ -23,7 +25,7 @@ export function AdminTopbar({ onMenuClick, isSidebarOpen, isMobile }: AdminTopba
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <UserMenu />
+          <UserMenu user={user} />
         </div>
       </div>
     </header>

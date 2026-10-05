@@ -27,6 +27,15 @@ function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_URL!;
 }
 
+function resolveUrl(path: string): string {
+  // Paths starting with /api/ are proxied by Next.js to the backend.
+  // Use relative URL so the request goes to the frontend origin.
+  if (path.startsWith("/api/")) {
+    return path;
+  }
+  return `${getBaseUrl()}${path}`;
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message = "An unexpected error occurred";
@@ -48,7 +57,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const apiClient = {
   async get<T>(path: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${getBaseUrl()}${path}`, {
+    const response = await fetch(resolveUrl(path), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -61,7 +70,7 @@ export const apiClient = {
   },
 
   async post<T>(path: string, body?: unknown, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${getBaseUrl()}${path}`, {
+    const response = await fetch(resolveUrl(path), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -75,7 +84,7 @@ export const apiClient = {
   },
 
   async put<T>(path: string, body?: unknown, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${getBaseUrl()}${path}`, {
+    const response = await fetch(resolveUrl(path), {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -89,7 +98,7 @@ export const apiClient = {
   },
 
   async patch<T>(path: string, body?: unknown, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${getBaseUrl()}${path}`, {
+    const response = await fetch(resolveUrl(path), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -103,7 +112,7 @@ export const apiClient = {
   },
 
   async delete<T>(path: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${getBaseUrl()}${path}`, {
+    const response = await fetch(resolveUrl(path), {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

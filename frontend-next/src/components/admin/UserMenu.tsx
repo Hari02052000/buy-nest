@@ -6,18 +6,21 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { logout } from "@/features/admin/auth/auth.service";
-import { useCurrentUser } from "@/features/admin/auth/useCurrentUser";
 import { currentUserQueryKey } from "@/features/admin/auth/useCurrentUser";
 import { useQueryClient } from "@tanstack/react-query";
+import type { CurrentUser } from "@/types/user";
 
-export function UserMenu() {
+interface UserMenuProps {
+  user: CurrentUser;
+}
+
+export function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { data: user } = useCurrentUser();
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -53,7 +56,7 @@ export function UserMenu() {
     try {
       await logout();
       queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
-      router.push("/admin/login");
+      router.replace("/admin/login");
       router.refresh();
     } catch (error) {
       setLogoutError(error instanceof Error ? error.message : "Failed to log out");

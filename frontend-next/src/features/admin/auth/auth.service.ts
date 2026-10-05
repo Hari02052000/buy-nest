@@ -27,7 +27,7 @@ export async function login(
 ): Promise<LoginResponse> {
   try {
     const response = await apiClient.post<LoginResponse>(
-      "/auth/login",
+      "/api/auth/admin/login",
       credentials
     );
     return response;
@@ -97,7 +97,7 @@ export interface LogoutResponse {
  */
 export async function logout(): Promise<LogoutResponse> {
   try {
-    return await apiClient.post<LogoutResponse>("/auth/logout");
+    return await apiClient.post<LogoutResponse>("/api/auth/logout");
   } catch (error) {
     if (error instanceof ApiClientError) {
       throw {

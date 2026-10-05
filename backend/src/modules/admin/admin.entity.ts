@@ -22,9 +22,7 @@ export interface CreateAdminInput {
 export type SanitizedAdmin = Omit<AdminProps, "password" | "salt">;
 
 export class Admin {
-  constructor(private props: AdminProps) {
-    Object.assign(this, props);
-  }
+  constructor(private props: AdminProps) {}
 
   static create(data: CreateAdminInput): Admin {
     return new Admin({

@@ -39,7 +39,7 @@ function LoginFormInner() {
 
     try {
       await login(data);
-      router.push("/admin");
+      router.replace("/admin");
       router.refresh();
     } catch (error) {
       const authErr = error as AuthError;
