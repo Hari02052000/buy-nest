@@ -24,10 +24,7 @@ export class ApiClientError extends Error {
 }
 
 function getBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    return "";
-  }
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  return process.env.NEXT_PUBLIC_API_URL!;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {

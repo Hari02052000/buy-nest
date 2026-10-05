@@ -1,118 +1,116 @@
 import "reflect-metadata";
-import { describe, it, expect, jest } from "@jest/globals";
-import { Request, Response } from "express";
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import type { Response } from "express";
 
-jest.mock("@/modules/user/user.model", () => ({
-  default: { findById: jest.fn().mockResolvedValue(null) },
-}));
+const mockAuthService = {
+  getSession: jest.fn<(sessionId: string) => Promise<any>>(),
+  getUserById: jest.fn<(id: string) => Promise<any>>(),
+  getAdminById: jest.fn<(id: string) => Promise<any>>(),
+};
 
-jest.mock("@/modules/admin/admin.model", () => ({
-  default: { findById: jest.fn().mockResolvedValue(null) },
+// Stub the tokens module so importing the middleware does not pull the whole DI graph.
+jest.mock("@/modules/auth/auth.tokens", () => ({
+  AUTH_TOKENS: { Service: Symbol("AuthService"), Controller: Symbol("AuthController") },
 }));
 
 jest.mock("tsyringe", () => ({
   __esModule: true,
-  container: {
-    resolve: jest.fn().mockReturnValue({ findBySessionId: jest.fn() }),
-  },
+  container: { resolve: jest.fn(() => mockAuthService) },
   injectable: () => (target: any) => target,
-  inject: () => (target: any, propertyKey: string | symbol) => {},
-  injectAll: () => (target: any, propertyKey: string | symbol) => {},
-  forwardRef: () => (target: any) => target,
+  inject: () => () => {},
 }));
+
+import { authenticateUser, authenticateAdmin } from "@/shared/middleware/auth.middleware";
+
+const makeReq = (cookies: Record<string, string> = {}) => ({ cookies }) as any;
+const makeRes = () =>
+  ({ status: jest.fn().mockReturnThis(), json: jest.fn() }) as unknown as Response;
+
+beforeEach(() => {
+  mockAuthService.getSession.mockReset();
+  mockAuthService.getUserById.mockReset();
+  mockAuthService.getAdminById.mockReset();
+});
 
 describe("authenticateUser middleware", () => {
   it("returns 401 when no session cookie", async () => {
-    const { authenticateUser } = require("@/shared/middleware/auth.middleware");
-    const req = { cookies: {} } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateUser(req, res, jest.fn());
+    const res = makeRes();
+    await authenticateUser(makeReq(), res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(401);
+    expect(mockAuthService.getSession).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when session is expired", async () => {
-    const { authenticateUser } = require("@/shared/middleware/auth.middleware");
-    const container = require("tsyringe").container;
-    (container.resolve as jest.Mock).mockReturnValueOnce({
-      findBySessionId: jest.fn().mockResolvedValue({ expiresAt: new Date("2020-01-01") }),
-    });
-    const req = { cookies: { session_id: "expired" } } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateUser(req, res, jest.fn());
-    expect(res.status).toHaveBeenCalledWith(401);
-  });
-
-  it("returns 401 when user not found", async () => {
-    const { authenticateUser } = require("@/shared/middleware/auth.middleware");
-    const container = require("tsyringe").container;
-    (container.resolve as jest.Mock).mockReturnValueOnce({
-      findBySessionId: jest.fn().mockResolvedValue({ expiresAt: new Date("2099-01-01"), userType: "user" }),
-    });
-    const UserModel = require("@/modules/user/user.model").default;
-    UserModel.findById = jest.fn().mockResolvedValue(null);
-    const req = { cookies: { session_id: "valid-id" } } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateUser(req, res, jest.fn());
+  it("returns 401 when session is missing or expired", async () => {
+    mockAuthService.getSession.mockResolvedValue(null);
+    const res = makeRes();
+    await authenticateUser(makeReq({ session_id: "expired" }), res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
   it("returns 401 for non-user session type", async () => {
-    const { authenticateUser } = require("@/shared/middleware/auth.middleware");
-    const container = require("tsyringe").container;
-    (container.resolve as jest.Mock).mockReturnValueOnce({
-      findBySessionId: jest.fn().mockResolvedValue({ expiresAt: new Date("2099-01-01"), userType: "admin" }),
-    });
-    const req = { cookies: { session_id: "admin-id" } } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateUser(req, res, jest.fn());
+    mockAuthService.getSession.mockResolvedValue({ userId: "a1", userType: "admin" });
+    const res = makeRes();
+    await authenticateUser(makeReq({ session_id: "admin-id" }), res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(401);
+    expect(mockAuthService.getUserById).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when user lookup fails", async () => {
+    mockAuthService.getSession.mockResolvedValue({ userId: "u1", userType: "user" });
+    mockAuthService.getUserById.mockRejectedValue(new Error("User not found"));
+    const res = makeRes();
+    await authenticateUser(makeReq({ session_id: "valid" }), res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it("populates req.user and calls next for a valid user session", async () => {
+    mockAuthService.getSession.mockResolvedValue({ userId: "u1", userType: "user" });
+    mockAuthService.getUserById.mockResolvedValue({ id: "u1", email: "u@x.com", userName: "u" });
+    const req = makeReq({ session_id: "valid" });
+    const next = jest.fn();
+    await authenticateUser(req, makeRes(), next);
+    expect(next).toHaveBeenCalled();
+    expect(req.user).toEqual({ id: "u1", email: "u@x.com", name: "u" });
   });
 });
 
 describe("authenticateAdmin middleware", () => {
   it("returns 401 when no session cookie", async () => {
-    const { authenticateAdmin } = require("@/shared/middleware/auth.middleware");
-    const req = { cookies: {} } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateAdmin(req, res, jest.fn());
+    const res = makeRes();
+    await authenticateAdmin(makeReq(), res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
-  it("returns 401 when session expired", async () => {
-    const { authenticateAdmin } = require("@/shared/middleware/auth.middleware");
-    const container = require("tsyringe").container;
-    (container.resolve as jest.Mock).mockReturnValueOnce({
-      findBySessionId: jest.fn().mockResolvedValue({ expiresAt: new Date("2020-01-01") }),
-    });
-    const req = { cookies: { session_id: "expired" } } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateAdmin(req, res, jest.fn());
+  it("returns 401 when session is missing or expired", async () => {
+    mockAuthService.getSession.mockResolvedValue(null);
+    const res = makeRes();
+    await authenticateAdmin(makeReq({ session_id: "expired" }), res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
   it("returns 403 for non-admin session type", async () => {
-    const { authenticateAdmin } = require("@/shared/middleware/auth.middleware");
-    const container = require("tsyringe").container;
-    (container.resolve as jest.Mock).mockReturnValueOnce({
-      findBySessionId: jest.fn().mockResolvedValue({ expiresAt: new Date("2099-01-01"), userType: "user" }),
-    });
-    const req = { cookies: { session_id: "user-session" } } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateAdmin(req, res, jest.fn());
+    mockAuthService.getSession.mockResolvedValue({ userId: "u1", userType: "user" });
+    const res = makeRes();
+    await authenticateAdmin(makeReq({ session_id: "user-session" }), res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(403);
+    expect(mockAuthService.getAdminById).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when admin not found", async () => {
-    const { authenticateAdmin } = require("@/shared/middleware/auth.middleware");
-    const container = require("tsyringe").container;
-    (container.resolve as jest.Mock).mockReturnValueOnce({
-      findBySessionId: jest.fn().mockResolvedValue({ expiresAt: new Date("2099-01-01"), userType: "admin", userId: "admin1" }),
-    });
-    const AdminModel = require("@/modules/admin/admin.model").default;
-    AdminModel.findById = jest.fn().mockResolvedValue(null);
-    const req = { cookies: { session_id: "admin-id" } } as Request;
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
-    await authenticateAdmin(req, res, jest.fn());
+  it("returns 401 when admin lookup fails", async () => {
+    mockAuthService.getSession.mockResolvedValue({ userId: "a1", userType: "admin" });
+    mockAuthService.getAdminById.mockRejectedValue(new Error("Admin not found"));
+    const res = makeRes();
+    await authenticateAdmin(makeReq({ session_id: "admin-id" }), res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it("populates req.user and calls next for a valid admin session", async () => {
+    mockAuthService.getSession.mockResolvedValue({ userId: "a1", userType: "admin" });
+    mockAuthService.getAdminById.mockResolvedValue({ id: "a1", email: "a@x.com", userName: "adm" });
+    const req = makeReq({ session_id: "admin-id" });
+    const next = jest.fn();
+    await authenticateAdmin(req, makeRes(), next);
+    expect(next).toHaveBeenCalled();
+    expect(req.user).toEqual({ id: "a1", email: "a@x.com", name: "adm" });
   });
 });

@@ -101,18 +101,19 @@ describe("Authentication", () => {
         updatedAt: new Date().toISOString(),
       };
       const { password, salt, googleId, otp, otpExp, ...safe } = props;
-      expect(safe.password).toBeUndefined();
-      expect(safe.salt).toBeUndefined();
-      expect(safe.googleId).toBeUndefined();
-      expect(safe.otp).toBeUndefined();
-      expect(safe.otpExp).toBeUndefined();
+      const record = safe as Record<string, unknown>;
+      expect(record.password).toBeUndefined();
+      expect(record.salt).toBeUndefined();
+      expect(record.googleId).toBeUndefined();
+      expect(record.otp).toBeUndefined();
+      expect(record.otpExp).toBeUndefined();
     });
   });
 });
 
 describe("Logout", () => {
   it("should invalidate server-side session", async () => {
-    const deleteMock = jest.fn().mockResolvedValue(undefined);
+    const deleteMock = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
     expect(deleteMock).toBeDefined();
   });
 

@@ -1,19 +1,18 @@
 import "reflect-metadata";
 import { configureContainer } from "@/shared/container";
-import { registerUserModule } from "@/modules/user/user.tokens";
-import { registerAdminModule } from "@/modules/admin/admin.tokens";
-import { registerAuthModule } from "@/modules/auth/auth.tokens";
-import { registerProductModule } from "@/modules/product/product.tokens";
-import { registerCategoryModule } from "@/modules/category/category.tokens";
-import { registerCartModule } from "@/modules/cart/cart.tokens";
-import { registerOrderModule } from "@/modules/order/order.tokens";
-import { registerAddressModule } from "@/modules/address/address.tokens";
-import { registerWishlistModule } from "@/modules/wishlist/wishlist.tokens";
-import { registerCouponModule } from "@/modules/coupon/coupon.tokens";
-import { registerPaymentModule } from "@/modules/payment/payment.tokens";
+import { registerUserModule } from "@/modules/user/user.di";
+import { registerAdminModule } from "@/modules/admin/admin.di";
+import { registerAuthModule } from "@/modules/auth/auth.di";
+import { registerProductModule } from "@/modules/product/product.di";
+import { registerCategoryModule } from "@/modules/category/category.di";
+import { registerCartModule } from "@/modules/cart/cart.di";
+import { registerOrderModule } from "@/modules/order/order.di";
+import { registerAddressModule } from "@/modules/address/address.di";
+import { registerWishlistModule } from "@/modules/wishlist/wishlist.di";
+import { registerCouponModule } from "@/modules/coupon/coupon.di";
+import { registerPaymentModule } from "@/modules/payment/payment.di";
 
 import connectDb from "@/shared/config/database";
-import { createServer } from "@/server";
 import { setupGracefulShutdown } from "@/shared/config/graceful-shutdown";
 import { createAdmin } from "@/modules/admin/admin.seed";
 import { env } from "@/shared/config/environment";
@@ -41,7 +40,9 @@ async function bootstrap(): Promise<void> {
   // 3. Seed admin
   await createAdmin();
 
-  // 4. Create Express server
+  // 4. Create Express server (required lazily so route modules resolve
+  //    their controllers from the container only after registration above)
+  const { createServer } = require("@/server") as typeof import("@/server");
   const app = createServer();
 
   // 5. Start listening

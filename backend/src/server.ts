@@ -16,14 +16,11 @@ import logger from "@/shared/config/logger";
 export function createServer(): express.Express {
   const app = express();
 
-  const allowedOrigins = (env.frontend_origins || env.frontend_url || "http://localhost:5174")
-    .split(",")
-    .map((o) => o.trim());
 
   app.use(helmet());
   app.use(
     cors({
-      origin: allowedOrigins,
+      origin:['http://localhost:3000'],
       credentials: true,
     }),
   );

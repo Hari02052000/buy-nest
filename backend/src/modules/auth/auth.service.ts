@@ -9,6 +9,7 @@ import type { AuthUtils } from "@/shared/utils/auth.utils";
 import { ValidationError } from "@/shared/errors";
 import { SESSION_TOKENS } from "./session.tokens";
 import type { SessionRepository } from "./session.repository";
+import type { SessionDocument } from "./session.entity";
 
 export interface UserSessionResult {
   user: {
@@ -124,7 +125,7 @@ export class AuthService {
     return admin.sanitize() as any;
   }
 
-  async getSession(sessionId: string): Promise<{ sessionId: string; userId: string; userType: "user" | "admin"; expiresAt: string; lastUsedAt: string; createdAt: string; updatedAt: string } | null> {
+  async getSession(sessionId: string): Promise<SessionDocument | null> {
     const session = await this.sessionRepo.findBySessionId(sessionId);
     if (!session) return null;
     if (new Date(session.expiresAt) <= new Date()) {

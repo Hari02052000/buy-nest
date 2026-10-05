@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import UserModel from "@/modules/user/user.model";
-import AdminModel from "@/modules/admin/admin.model";
-import { SESSION_TOKENS } from "@/modules/auth/session.tokens";
 import { container } from "tsyringe";
-import { SessionRepository } from "@/modules/auth/session.repository";
+import { AUTH_TOKENS } from "@/modules/auth/auth.tokens";
+import type { AuthService } from "@/modules/auth/auth.service";
 
 export const authenticateUser = async (
   req: Request,
@@ -17,9 +15,9 @@ export const authenticateUser = async (
       return;
     }
 
-    const sessionRepo = container.resolve<SessionRepository>(SESSION_TOKENS.Repository);
-    const session = await sessionRepo.findBySessionId(sessionId);
-    if (!session || new Date(session.expiresAt) <= new Date()) {
+    const authService = container.resolve<AuthService>(AUTH_TOKENS.Service);
+    const session = await authService.getSession(sessionId);
+    if (!session) {
       res.status(401).json({ success: false, message: "Session expired" });
       return;
     }
@@ -29,14 +27,10 @@ export const authenticateUser = async (
       return;
     }
 
-    const user = await UserModel.findById(session.userId);
-    if (!user) {
-      res.status(401).json({ success: false, message: "User not found" });
-      return;
-    }
+    const user = await authService.getUserById(session.userId);
 
     req.user = {
-      id: user._id.toString(),
+      id: user.id,
       email: user.email,
       name: user.userName,
     };
@@ -59,9 +53,9 @@ export const authenticateAdmin = async (
       return;
     }
 
-    const sessionRepo = container.resolve<SessionRepository>(SESSION_TOKENS.Repository);
-    const session = await sessionRepo.findBySessionId(sessionId);
-    if (!session || new Date(session.expiresAt) <= new Date()) {
+    const authService = container.resolve<AuthService>(AUTH_TOKENS.Service);
+    const session = await authService.getSession(sessionId);
+    if (!session) {
       res.status(401).json({ success: false, message: "Session expired" });
       return;
     }
@@ -71,18 +65,13 @@ export const authenticateAdmin = async (
       return;
     }
 
-    const admin = await AdminModel.findById(session.userId);
-    if (!admin) {
-      res.status(401).json({ success: false, message: "Admin not found" });
-      return;
-    }
+    const admin = await authService.getAdminById(session.userId);
 
     req.user = {
-      id: admin._id.toString(),
       email: admin.email,
+      id: admin.id,
       name: admin.userName,
-      role: "ADMIN",
-    };
+     };
 
     next();
   } catch (error) {

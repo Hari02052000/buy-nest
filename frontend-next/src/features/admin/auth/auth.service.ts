@@ -1,4 +1,5 @@
 import { apiClient, ApiClientError } from "@/lib/api/client";
+import type { CurrentUser } from "@/types/user";
 import type { LoginFormData } from "./login.schema";
 
 export interface LoginResponse {
@@ -26,7 +27,7 @@ export async function login(
 ): Promise<LoginResponse> {
   try {
     const response = await apiClient.post<LoginResponse>(
-      "/api/auth/login",
+      "/auth/login",
       credentials
     );
     return response;
@@ -52,5 +53,31 @@ export async function login(
       message: "Unable to sign in right now. Please try again.",
       isAuthError: false,
     } satisfies AuthError;
+  }
+}
+
+/**
+ * Fetch the currently authenticated admin from the backend session.
+ *
+ * Calls `GET /api/auth/me`, which the Next.js rewrite proxies to Express
+ * `GET /auth/me`. Express reads the HttpOnly session cookie — sent
+ * automatically because the API client uses `credentials: "include"` — and
+ * returns the safe current user. The cookie is never read in JavaScript.
+ *
+ * @returns The current user on 200, or `null` when unauthenticated (401).
+ * @throws ApiClientError for any other failure (network/server) so callers
+ *   (e.g. a TanStack Query hook) can surface a real error state.
+ */
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  try {
+    return await apiClient.get<CurrentUser>("/api/auth/me");
+  } catch (error) {
+    // 401 = no valid session. This is an expected "not signed in" state,
+    // not an error, so resolve to null rather than throwing.
+    if (error instanceof ApiClientError && error.status === 401) {
+      return null;
+    }
+    // Preserve every other failure (500, network, etc.) as a real error.
+    throw error;
   }
 }

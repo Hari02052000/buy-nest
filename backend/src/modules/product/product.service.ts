@@ -1,5 +1,5 @@
 import { injectable, inject } from "tsyringe";
-import type { ProductRepository } from "./product.repository";
+import { ProductRepository } from "./product.repository";
 import { Product as ProductEntity, type CreateProductInput, type ProductImage, type SanitizedProduct } from "./product.entity";
 import { SHARED_TOKENS } from "@/shared/tokens";
 import type { CloudUtils } from "@/shared/utils/cloud.utils";
