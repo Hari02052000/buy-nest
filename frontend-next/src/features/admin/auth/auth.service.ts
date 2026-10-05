@@ -81,3 +81,33 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     throw error;
   }
 }
+
+export interface LogoutResponse {
+  success: boolean;
+}
+
+/**
+ * Log out the current admin user.
+ *
+ * Calls `POST /auth/logout` which destroys the server-side session
+ * and clears the HttpOnly cookie.
+ *
+ * @returns Logout response on success
+ * @throws AuthError on failure
+ */
+export async function logout(): Promise<LogoutResponse> {
+  try {
+    return await apiClient.post<LogoutResponse>("/auth/logout");
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      throw {
+        message: "Unable to sign out. Please try again.",
+        isAuthError: error.isAuthError,
+      } satisfies AuthError;
+    }
+    throw {
+      message: "Unable to sign out. Please try again.",
+      isAuthError: false,
+    } satisfies AuthError;
+  }
+}
