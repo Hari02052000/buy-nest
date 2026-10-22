@@ -16,8 +16,8 @@ interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -51,15 +51,13 @@ export function UserMenu({ user }: UserMenuProps) {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    setLogoutError(null);
 
     try {
       await logout();
       queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       router.replace("/admin/login");
       router.refresh();
-    } catch (error) {
-      setLogoutError(error instanceof Error ? error.message : "Failed to log out");
+    } catch {
       setIsLoggingOut(false);
     }
   };
@@ -151,7 +149,7 @@ export function UserMenu({ user }: UserMenuProps) {
                 "focus:outline-none focus:bg-error/10",
                 "transition-colors duration-150"
               )}
-              onClick={() => setIsOpen(false)}
+              onClick={() => { setIsOpen(false); setShowLogoutConfirm(true); }}
             >
               Sign out
             </button>
@@ -160,9 +158,9 @@ export function UserMenu({ user }: UserMenuProps) {
       )}
 
       <ConfirmDialog
-        isOpen={logoutError !== null || isLoggingOut}
+        isOpen={showLogoutConfirm}
         onClose={() => {
-          setLogoutError(null);
+          setShowLogoutConfirm(false);
           setIsLoggingOut(false);
         }}
         onConfirm={handleLogout}

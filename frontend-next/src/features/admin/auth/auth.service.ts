@@ -97,7 +97,7 @@ export interface LogoutResponse {
  */
 export async function logout(): Promise<LogoutResponse> {
   try {
-    return await apiClient.post<LogoutResponse>("/api/auth/logout");
+    return await apiClient.post<LogoutResponse>("/api/auth/admin/logout");
   } catch (error) {
     if (error instanceof ApiClientError) {
       throw {
