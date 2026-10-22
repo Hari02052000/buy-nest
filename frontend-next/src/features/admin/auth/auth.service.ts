@@ -60,7 +60,7 @@ export async function login(
  * Fetch the currently authenticated admin from the backend session.
  *
  * Calls `GET /api/auth/me`, which the Next.js rewrite proxies to Express
- * `GET /auth/me`. Express reads the HttpOnly session cookie — sent
+ * `GET /api/v1/auth/me`. Express reads the HttpOnly session cookie — sent
  * automatically because the API client uses `credentials: "include"` — and
  * returns the safe current user. The cookie is never read in JavaScript.
  *
