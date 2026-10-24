@@ -2,7 +2,6 @@
 
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Switch } from "@/components/ui/Switch";
 import { EditIcon, Trash2Icon, ChevronDownIcon } from "lucide-react";
 import type { Category } from "../api/category.types";
@@ -46,11 +45,6 @@ export function createCategoryColumns({
         return (
           <div className="flex items-center gap-2">
             <span className="font-medium text-foreground">{indent}{category.name}</span>
-            {category.level > 0 && (
-              <Badge variant="secondary" className="text-xs ml-1">
-                Level {category.level}
-              </Badge>
-            )}
           </div>
         );
       },

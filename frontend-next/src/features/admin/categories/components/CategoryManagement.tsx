@@ -5,13 +5,11 @@ import { PlusIcon, SearchIcon } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Badge } from "@/components/ui/Badge";
-import { Switch } from "@/components/ui/Switch";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CategoryFormDialog } from "./CategoryFormDialog";
 import { createCategoryColumns } from "./CategoryColumns";
-import { useCategories, useCreateCategory, useUpdateCategory, useToggleListStatus, flattenCategoryTree, getParentOptions } from "../api/category.queries";
+import { useCategories, useCreateCategory, useUpdateCategory, useToggleListStatus, flattenCategoryTree } from "../api/category.queries";
 import { useToast } from "@/components/ui/useToast";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Category } from "../api/category.types";
 import type { CreateCategoryInput, UpdateCategoryInput } from "../schemas/category.schema";
 
@@ -35,7 +33,6 @@ export function CategoryManagement() {
   const { toast } = useToast();
 
   const categories = useMemo(() => categoryTree ? flattenCategoryTree(categoryTree) : [], [categoryTree]);
-  const parentOptions = useMemo(() => categoryTree ? getParentOptions(categoryTree, editCategory?.id) : [], [categoryTree, editCategory?.id]);
 
   const filteredCategories = useMemo(() => categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -179,7 +176,6 @@ export function CategoryManagement() {
         onSubmit={handleSubmit}
         mode={editCategory ? "edit" : "create"}
         category={editCategory}
-        parentOptions={parentOptions}
         isLoading={isLoadingMutations}
       />
 

@@ -5,13 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ShakeProvider, useShakeContext } from "@/components/form/ShakeContext";
 import { FormInput } from "@/components/form/FormInput";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectScrollUpButton, SelectScrollDownButton } from "@/components/ui/Select";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Button } from "@/components/ui/Button";
+import { ApiSelect } from "@/components/ui/ApiSelect";
 import { cn } from "@/lib/utils";
 import { createCategorySchema, updateCategorySchema, type CreateCategoryInput, type UpdateCategoryInput } from "../schemas/category.schema";
 import type { Category } from "../api/category.types";
 import { XIcon } from "lucide-react";
+import { useParentCategories } from "../api/category.queries";
 
 interface CategoryFormDialogProps {
   isOpen: boolean;
@@ -19,7 +20,6 @@ interface CategoryFormDialogProps {
   onSubmit: (data: CreateCategoryInput | UpdateCategoryInput) => Promise<void>;
   mode: "create" | "edit";
   category?: Category | null;
-  parentOptions: { value: string; label: string; level: number }[];
   isLoading: boolean;
 }
 
@@ -29,7 +29,6 @@ function CategoryFormDialogInner({
   onSubmit,
   mode,
   category,
-  parentOptions,
   isLoading,
 }: CategoryFormDialogProps) {
   const { requestShakeFirstInvalid } = useShakeContext();
@@ -43,6 +42,10 @@ function CategoryFormDialogInner({
       : { name: category?.name || "", parentId: category?.parentId || "", image: undefined as File | undefined },
     mode: "onChange",
   });
+
+  const { data: parentOptions = [], isLoading: parentLoading } = useParentCategories(
+    mode === "edit" ? category?.id : undefined
+  );
 
   useEffect(() => {
     if (mode === "edit" && category) {
@@ -101,7 +104,7 @@ function CategoryFormDialogInner({
             <XIcon className="h-5 w-5" />
           </button>
         </div>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="p-6 space-y-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="p-6 space-y-4">
           <FormInput
             control={form.control}
             name="name"
@@ -124,24 +127,19 @@ function CategoryFormDialogInner({
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Parent Category</label>
-            <Select
-              onValueChange={(value) => form.setValue("parentId", value)}
-              defaultValue={form.getValues("parentId")}
+            <ApiSelect
+              options={parentOptions}
+              value={form.getValues("parentId") ?? ""}
+              onChange={(v) => form.setValue("parentId", v)}
+              placeholder="Select parent (optional)"
+              loading={parentLoading}
               disabled={isLoading}
-            >
-              <SelectTrigger className={cn("w-full")}>
-                <SelectValue placeholder="Select parent (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectScrollUpButton>Scroll up</SelectScrollUpButton>
-                {parentOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {"  ".repeat(Math.max(0, option.level))}{option.label}
-                  </SelectItem>
-                ))}
-                <SelectScrollDownButton>Scroll down</SelectScrollDownButton>
-              </SelectContent>
-            </Select>
+              searchable={true}
+              searchPlaceholder="Search categories..."
+              emptyMessage="No parent categories available"
+              aria-label="Parent category"
+              error={form.formState.errors.parentId?.message}
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
