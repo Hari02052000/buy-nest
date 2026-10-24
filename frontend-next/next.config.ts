@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       // Enables HttpOnly cookie auth for all endpoints (single domain)
       {
         source: "/api/:path*",
-        destination: `${backendUrl}/api/v1/:path*`,
+        destination: `${backendUrl}/:path*`,
       },
     ];
   },
