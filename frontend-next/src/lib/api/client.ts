@@ -74,42 +74,45 @@ export const apiClient = {
   },
 
   async post<T>(path: string, body?: unknown, options?: RequestInit): Promise<T> {
+    const isFormData = body instanceof FormData;
     const response = await fetch(resolveUrl(path), {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...options?.headers,
       },
       credentials: "include",
-      body: body ? JSON.stringify(body) : undefined,
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
       ...options,
     });
     return handleResponse<T>(response);
   },
 
   async put<T>(path: string, body?: unknown, options?: RequestInit): Promise<T> {
+    const isFormData = body instanceof FormData;
     const response = await fetch(resolveUrl(path), {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...options?.headers,
       },
       credentials: "include",
-      body: body ? JSON.stringify(body) : undefined,
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
       ...options,
     });
     return handleResponse<T>(response);
   },
 
   async patch<T>(path: string, body?: unknown, options?: RequestInit): Promise<T> {
+    const isFormData = body instanceof FormData;
     const response = await fetch(resolveUrl(path), {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...options?.headers,
       },
       credentials: "include",
-      body: body ? JSON.stringify(body) : undefined,
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
       ...options,
     });
     return handleResponse<T>(response);

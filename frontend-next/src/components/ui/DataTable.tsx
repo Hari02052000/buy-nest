@@ -8,6 +8,7 @@ import {
   createFilteredRowModel,
   createPaginatedRowModel,
   createExpandedRowModel,
+  columnVisibilityFeature,
   flexRender,
   type ColumnDef,
   type SortingState,
@@ -95,6 +96,7 @@ export function DataTable<TData>({
     manualPagination: pageCount > 0,
     pageCount,
     debugTable: false,
+    features: [columnVisibilityFeature],
   } as any);
 
   if (isLoading) {

@@ -24,7 +24,6 @@ export type SanitizedCategory = Omit<CategoryProps, "updatedAt">;
 
 export class Category {
   constructor(private props: CategoryProps) {
-    Object.assign(this, props);
   }
 
   static create(data: CreateCategoryInput): Category {
