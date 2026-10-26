@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { PlusIcon, SearchIcon, ChevronLeftIcon } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CategoryFormDialog } from "./CategoryFormDialog";
 import { createCategoryColumns } from "./CategoryColumns";
-import { useCategories, useCreateCategory, useUpdateCategory, useToggleListStatus, flattenCategoryTree } from "../api/category.queries";
+import { useCategories, useCreateCategory, useUpdateCategory, useToggleListStatus, flattenCategoryTree, useSubCategories } from "../api/category.queries";
 import { useToast } from "@/components/ui/useToast";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Category } from "../api/category.types";
@@ -20,6 +20,7 @@ export function CategoryManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [currentParent, setCurrentParent] = useState<Category | null>(null);
 
   const { data: categoryTree, isLoading, refetch } = useCategories({
     limit: pageSize,
@@ -27,12 +28,19 @@ export function CategoryManagement() {
     isAdmin: true,
   });
 
+  const { data: subCategories = [], isLoading: subLoading } = useSubCategories(currentParent?.id ?? "");
+
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
   const toggleMutation = useToggleListStatus();
   const { toast } = useToast();
 
-  const categories = useMemo(() => categoryTree ? flattenCategoryTree(categoryTree) : [], [categoryTree]);
+  const categories = useMemo(() => {
+    if (currentParent) {
+      return subCategories;
+    }
+    return categoryTree ? flattenCategoryTree(categoryTree) : [];
+  }, [categoryTree, currentParent, subCategories]);
 
   const filteredCategories = useMemo(() => categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -48,7 +56,7 @@ export function CategoryManagement() {
     if (totalPages > 0 && currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-  }, [totalPages, currentPage]);
+  }, [totalPages]);
 
   const handleCreate = useCallback(async (data: CreateCategoryInput) => {
     if (createMutation.isPending) return;
@@ -110,10 +118,19 @@ export function CategoryManagement() {
   }, []);
 
   const handleViewSubCategories = useCallback((category: Category) => {
-    toast({ title: "Subcategories", description: `View subcategories for ${category.name}`, variant: "default" });
-  }, [toast]);
+    setCurrentParent(category);
+    setCurrentPage(1);
+    setSearchQuery("");
+  }, []);
+
+  const handleBackToParent = useCallback(() => {
+    setCurrentParent(null);
+    setCurrentPage(1);
+    setSearchQuery("");
+  }, []);
 
   const isLoadingMutations = createMutation.isPending || updateMutation.isPending || toggleMutation.isPending;
+  const combinedLoading = isLoading || (currentParent && subLoading);
 
   const columns = useMemo(() => createCategoryColumns({
     onEdit: handleEdit,
@@ -144,6 +161,22 @@ export function CategoryManagement() {
         </Button>
       </div>
 
+      {currentParent && (
+        <div className="flex items-center gap-2 text-sm text-foreground-muted mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToParent}
+            className="h-8 px-3 gap-1"
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+            Back to {currentParent.name}
+          </Button>
+          <span className="text-foreground">/</span>
+          <span className="font-medium">Subcategories of {currentParent.name}</span>
+        </div>
+      )}
+
       <div className="flex gap-4">
         <div className="relative flex-1 max-w-md">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
@@ -159,7 +192,7 @@ export function CategoryManagement() {
       <DataTable<Category>
         columns={columns}
         data={paginatedCategories}
-        isLoading={isLoading}
+        isLoading={combinedLoading}
         pagination={true}
         pageSize={pageSize}
         pageCount={totalPages}
@@ -167,7 +200,7 @@ export function CategoryManagement() {
           setCurrentPage(pagination.pageIndex);
           setPageSize(pagination.pageSize);
         }}
-        emptyMessage="No categories found"
+        emptyMessage={currentParent ? `No subcategories found for ${currentParent.name}` : "No categories found"}
       />
 
       <CategoryFormDialog

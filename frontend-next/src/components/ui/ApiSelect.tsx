@@ -25,6 +25,7 @@ interface ApiSelectProps {
   "aria-label"?: string;
   id?: string;
   className?: string;
+  selectedLabel?: string;
 }
 
 const Select = SelectPrimitive.Root;
@@ -117,6 +118,7 @@ export function ApiSelect({
   "aria-label": ariaLabel,
   id,
   className,
+  selectedLabel,
 }: ApiSelectProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -128,6 +130,7 @@ export function ApiSelect({
 
   const hasValue = value !== undefined && value !== "";
   const selectedOption = options.find((opt) => opt.value === value);
+  const displayLabel = selectedLabel ?? selectedOption?.label;
 
   return (
     <Select
@@ -160,7 +163,7 @@ export function ApiSelect({
               "flex-1 text-left truncate",
               hasValue ? "text-foreground" : "text-foreground-muted"
             )}>
-              {hasValue ? selectedOption?.label : placeholder}
+              {hasValue ? displayLabel : placeholder}
             </SelectValue>
             <SelectIcon>
               <ChevronDownIcon className="h-4 w-4 text-foreground-muted flex-shrink-0 transition-transform" />

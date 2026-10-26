@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, type DragEvent } from "react";
-import { UploadIcon, XIcon, ImageIcon } from "lucide-react";
+import { UploadIcon, CameraIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
@@ -12,6 +12,7 @@ interface ImageUploadProps {
   maxSizeMB?: number;
   accept?: string;
   className?: string;
+  error?: string;
 }
 
 export function ImageUpload({
@@ -22,9 +23,11 @@ export function ImageUpload({
   maxSizeMB = 5,
   accept = "image/*",
   className,
+  error: errorProp,
 }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
 
@@ -39,6 +42,7 @@ export function ImageUpload({
   const handleFileSelect = useCallback(
     (file: File | null) => {
       clearPreview();
+      setError(null);
 
       if (!file) {
         onChange(null);
@@ -46,12 +50,12 @@ export function ImageUpload({
       }
 
       if (file.size > maxSizeMB * 1024 * 1024) {
-        alert(`File size must be less than ${maxSizeMB}MB`);
+        setError(`File size must be less than ${maxSizeMB}MB`);
         return;
       }
 
       if (!file.type.startsWith("image/")) {
-        alert("File must be an image");
+        setError("File must be an image");
         return;
       }
 
@@ -146,20 +150,28 @@ export function ImageUpload({
         aria-label="Upload image"
       >
         {displayUrl ? (
-          <div className="relative w-full max-w-xs mx-auto">
+          <div className="relative w-full max-w-xs mx-auto group">
             <img
               src={displayUrl}
               alt="Preview"
-              className="w-full h-48 object-cover rounded-lg"
+              className="w-full h-48 object-cover rounded-lg cursor-pointer"
             />
             {!disabled && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-lg cursor-pointer">
+                <div className="flex flex-col items-center gap-1 text-white">
+                  <CameraIcon className="h-8 w-8" />
+                  <span className="text-sm font-medium">Click to change image</span>
+                </div>
+              </div>
+            )}
+            {onRemove && !disabled && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleRemove();
                 }}
-                className="absolute top-2 right-2 rounded-full bg-error-foreground/90 text-error p-1 hover:bg-error-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-error-foreground focus:ring-offset-2"
+                className="absolute top-2 right-2 rounded-full bg-black/60 text-white p-1 hover:bg-black/70 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
                 aria-label="Remove image"
               >
                 <XIcon className="h-4 w-4" />
@@ -183,9 +195,14 @@ export function ImageUpload({
         )}
       </div>
 
-      {displayUrl && !disabled && (
+      {displayUrl && !disabled && onRemove && (
         <p className="mt-2 text-xs text-foreground-muted text-center">
           Click image to change, or use the remove button
+        </p>
+      )}
+      {(error || errorProp) && (
+        <p className="mt-2 text-sm text-error-foreground" role="alert">
+          {error || errorProp}
         </p>
       )}
     </div>
