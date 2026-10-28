@@ -72,13 +72,13 @@ function CategoryFormDialogInner({
   }, [isOpen, mode, category, form]);
 
   const isSubmitted = form.formState.isSubmitted;
-  const errors = form.formState.errors;
+  const errors = form.formState.errors as Record<string, { message?: string } | undefined>;
 
   useEffect(() => {
     if (isSubmitted && errors.name) {
       requestShakeFirstInvalid();
     }
-    if (isSubmitted && mode === "create" && "image" in errors && errors.image) {
+    if (isSubmitted && mode === "create" && errors.image) {
       requestShakeFirstInvalid();
     }
   }, [isSubmitted, errors.name, errors, mode, requestShakeFirstInvalid]);
@@ -147,7 +147,7 @@ function CategoryFormDialogInner({
                 value={null}
                 onChange={(file) => form.setValue("image", file as File, { shouldValidate: true })}
                 disabled={isLoading}
-                error={form.formState.errors.image?.message}
+                error={(errors as Record<string, { message?: string } | undefined>).image?.message}
               />
             </div>
           )}

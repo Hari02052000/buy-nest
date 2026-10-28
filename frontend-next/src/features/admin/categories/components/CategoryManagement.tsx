@@ -130,7 +130,7 @@ export function CategoryManagement() {
   }, []);
 
   const isLoadingMutations = createMutation.isPending || updateMutation.isPending || toggleMutation.isPending;
-  const combinedLoading = isLoading || (currentParent && subLoading);
+  const combinedLoading = Boolean(isLoading || (currentParent && subLoading));
 
   const columns = useMemo(() => createCategoryColumns({
     onEdit: handleEdit,
